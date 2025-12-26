@@ -124,15 +124,19 @@ function update(){
 function draw(){
     ctx.clearRect(0,0,WIDTH,HEIGHT);
 
-    // Sky (just above green)
+    // ---- Sky (double height) ----
     ctx.fillStyle="#87ceeb";
-    ctx.fillRect(0, ROAD_Y - GREEN_HEIGHT - SKY_HEIGHT, WIDTH, SKY_HEIGHT);
+    ctx.fillRect(0, ROAD_Y - GREEN_HEIGHT - SKY_HEIGHT*2, WIDTH, SKY_HEIGHT*2);
 
-    // Green grass band
+    // ---- Stationary sun/cloud in top-left ----
+    ctx.font="48px sans-serif";
+    ctx.fillText("⛅️", 20, 50); // fixed position, does not scroll
+
+    // ---- Green grass band ----
     ctx.fillStyle="#2ecc71";
     ctx.fillRect(0, ROAD_Y - GREEN_HEIGHT, WIDTH, GREEN_HEIGHT);
 
-    // Decorations in green area (behind player)
+    // ---- Decorations in green area (behind player) ----
     decorations.forEach(d=>{
         if(d.x > scrollX - 100 && d.x < scrollX + WIDTH + 100){
             ctx.font="48px sans-serif";
@@ -140,11 +144,11 @@ function draw(){
         }
     });
 
-    // Grey road at bottom
+    // ---- Grey road at bottom ----
     ctx.fillStyle="#666";
     ctx.fillRect(0, ROAD_Y, WIDTH, 80);
 
-    // Foods
+    // ---- Foods ----
     foods.forEach(f=>{
         if(!f.collected){
             ctx.font="48px sans-serif";
@@ -152,11 +156,11 @@ function draw(){
         }
     });
 
-    // Player
+    // ---- Player ----
     ctx.font="64px sans-serif";
     ctx.fillText("🏃‍♀️", player.x - scrollX, player.y);
 
-    // Mochkil as raccoon
+    // ---- Mochkil as raccoon ----
     ctx.fillText("🦝", mochkil.x - scrollX, mochkil.y);
 }
 
