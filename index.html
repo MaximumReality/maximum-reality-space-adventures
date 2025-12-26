@@ -34,7 +34,7 @@ const ctx = canvas.getContext("2d");
 const WIDTH = canvas.width;
 const HEIGHT = canvas.height;
 
-const ROAD_Y = HEIGHT - 80;
+const ROAD_Y = HEIGHT - 80;       // Bottom of road
 const GREEN_HEIGHT = 100;
 const GREY_HEIGHT = 80;
 
@@ -69,7 +69,7 @@ let clouds = [
 // Stars
 let stars = [];
 for(let i=0;i<100;i++){
-    stars.push({x:Math.random()*WIDTH, y:Math.random()*(ROAD_Y-GREEN_HEIGHT), size:1+Math.random()*2});
+    stars.push({x:Math.random()*WIDTH*3, y:Math.random()*(ROAD_Y-GREEN_HEIGHT), size:1+Math.random()*2});
 }
 
 // Moon
@@ -87,7 +87,7 @@ function gameLoop(){
 
 // ---- Update ----
 function update(){
-    // Player moves left
+    // Player moves left (screen scrolls right)
     if(leftDown) player.x -=5;
 
     // Jumping
@@ -102,10 +102,16 @@ function update(){
 
     scrollX = player.x - (WIDTH-150);
 
-    // Move clouds slowly for parallax
-    clouds.forEach(c=>c.x += 1); // slower than player movement
+    // Clouds parallax (slower)
     clouds.forEach(c=>{
-        if(c.x - scrollX > WIDTH) c.x -= WIDTH+200;
+        c.x += 0.5; // slower than foreground
+        if(c.x - scrollX > WIDTH) c.x -= WIDTH + 200;
+    });
+
+    // Stars parallax (slowest)
+    stars.forEach(s=>{
+        s.x += 0.2;
+        if(s.x - scrollX > WIDTH) s.x -= WIDTH*3;
     });
 }
 
@@ -113,15 +119,15 @@ function update(){
 function draw(){
     ctx.clearRect(0,0,WIDTH,HEIGHT);
 
-    // Sky
-    ctx.fillStyle = "#0b1d51"; // dark blue
+    // Sky (dark blue)
+    ctx.fillStyle = "#0b1d51";
     ctx.fillRect(0,0,WIDTH,ROAD_Y-GREEN_HEIGHT);
 
     // Stars
     stars.forEach(s=>{
         ctx.fillStyle = "#fff";
         ctx.beginPath();
-        ctx.arc(s.x, s.y, s.size, 0, Math.PI*2);
+        ctx.arc(s.x - scrollX*0.2, s.y, s.size, 0, Math.PI*2);
         ctx.fill();
     });
 
@@ -132,7 +138,7 @@ function draw(){
     // Clouds
     ctx.font="48px sans-serif";
     clouds.forEach(c=>{
-        ctx.fillText("☁️", c.x-scrollX, c.y);
+        ctx.fillText("☁️", c.x - scrollX*0.5, c.y);
     });
 
     // Green grass
