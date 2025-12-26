@@ -5,7 +5,7 @@ const config = {
     type: Phaser.AUTO,
     width: 800,
     height: 600,
-    backgroundColor: '#000000',
+    backgroundColor: '#111111', // visible background
     physics: {
         default: 'arcade',
         arcade: {
@@ -27,10 +27,9 @@ let leftDown = false;
 let rightDown = false;
 let jumpDown = false;
 let platforms, foods;
-let idleTime = 0;
 let lastPlatformX = 0;
+let idleTime = 0;
 
-// Define space zones (x start and end)
 const spaceZones = [
     { start: 800, end: 1400 },
     { start: 2200, end: 2800 },
@@ -39,20 +38,20 @@ const spaceZones = [
 function preload() {}
 
 function create() {
-    // Infinite world
-    this.physics.world.setBounds(0, 0, Number.MAX_SAFE_INTEGER, WORLD_HEIGHT);
-    this.cameras.main.setBounds(0, 0, Number.MAX_SAFE_INTEGER, WORLD_HEIGHT);
+    // Background rectangle so screen isn’t black
+    this.add.rectangle(0, 0, Number.MAX_SAFE_INTEGER, 600, 0x222222).setOrigin(0,0);
 
     // Groups
     platforms = this.physics.add.staticGroup();
     foods = this.physics.add.group();
 
     // Initial platform
-    spawnPlatform(this, 0, WORLD_HEIGHT - 20, 400);
+    const initialY = WORLD_HEIGHT - 20;
+    spawnPlatform(this, 0, initialY, 400);
     lastPlatformX = 400;
 
-    // Player (Azul)
-    player = this.add.text(100, 200, '🐱', {
+    // Player (Azul) starts on platform
+    player = this.add.text(100, initialY - 40, '🐱', {
         fontSize: '64px',
         shadow: { offsetX: 0, offsetY: 0, color: '#00ffff', blur: 12 }
     });
@@ -60,25 +59,24 @@ function create() {
     setupBody(player, 0.2);
     player.inSpace = false;
 
-    // Mochkil (Tuxedo)
-    mochkil = this.add.text(30, 200, '🐈‍⬛', {
+    // Mochkil (Tuxedo) starts on platform
+    mochkil = this.add.text(30, initialY - 40, '🐈‍⬛', {
         fontSize: '64px',
         shadow: { offsetX: 0, offsetY: 0, color: '#ffffff', blur: 10 }
     });
     this.physics.add.existing(mochkil);
     setupBody(mochkil, 0.3);
+    mochkil.body.checkCollision.none = true;
 
-    // ===== COLLISIONS =====
+    // Collisions
     this.physics.add.collider(player, platforms);
     this.physics.add.collider(mochkil, platforms);
     this.physics.add.collider(foods, platforms);
     this.physics.add.overlap(mochkil, foods, eatFood, null, this);
 
-    // Disable Mochkil blocking Azul
-    mochkil.body.checkCollision.none = true;
-
     // Camera
     this.cameras.main.startFollow(player);
+    this.cameras.main.setBounds(0, 0, Number.MAX_SAFE_INTEGER, 600);
 
     // UI Bar
     this.add.rectangle(
@@ -87,11 +85,8 @@ function create() {
         config.width,
         CONTROL_BAR_HEIGHT,
         0x111111
-    )
-    .setScrollFactor(0)
-    .setDepth(500);
+    ).setScrollFactor(0).setDepth(500);
 
-    // Buttons
     const buttonY = WORLD_HEIGHT + 30;
     createButton(this, 80, buttonY, '◀', () => leftDown = true, () => leftDown = false);
     createButton(this, 180, buttonY, '▶', () => rightDown = true, () => rightDown = false);
@@ -101,12 +96,11 @@ function create() {
 function update() {
     idleTime += 0.05;
 
-    // ===== SPACE ZONES =====
+    // SPACE ZONES
     let inSpace = false;
     spaceZones.forEach(zone => {
         if (player.x >= zone.start && player.x <= zone.end) inSpace = true;
     });
-
     player.body.gravity.y = inSpace ? 300 : 900;
     mochkil.body.gravity.y = inSpace ? 300 : 900;
 
@@ -115,7 +109,7 @@ function update() {
     }
     player.inSpace = inSpace;
 
-    // ===== PLAYER MOVEMENT =====
+    // PLAYER MOVEMENT
     if (leftDown) {
         player.body.setVelocityX(-220);
         player.scaleX = -1;
@@ -131,15 +125,10 @@ function update() {
         this.cameras.main.shake(120, 0.004);
     }
 
-    // ===== MOCHKIL AI (smooth follow) =====
+    // MOCHKIL AI (horizontal follow)
     const followSpeed = 160;
     const dx = player.x - mochkil.x;
     mochkil.body.setVelocityX(Phaser.Math.Clamp(dx, -followSpeed, followSpeed));
-
-    // Keep Mochkil on platform visually
-    if (mochkil.body.blocked.down) {
-        mochkil.y = WORLD_HEIGHT - 60; // adjust based on platform Y
-    }
 
     // Idle bounce
     if (player.body.blocked.down) {
@@ -147,17 +136,16 @@ function update() {
         mochkil.y += Math.sin(idleTime + 1) * 0.25;
     }
 
-    // Spawn new platform
+    // SPAWN NEW PLATFORMS & FOOD
     if (player.x + 600 > lastPlatformX) {
         const width = Phaser.Math.Between(200, 400);
         const heightOffset = Phaser.Math.Between(-50, 50);
         const newY = Phaser.Math.Clamp(WORLD_HEIGHT - 20 + heightOffset, 300, WORLD_HEIGHT - 20);
         spawnPlatform(this, lastPlatformX, newY, width);
-        lastPlatformX += width;
 
         // Random food
         if (Phaser.Math.Between(0,1)) {
-            const food = this.add.text(lastPlatformX - width/2, newY - 50, Phaser.Math.RND.pick(['🍕','🌮']), {
+            const food = this.add.text(lastPlatformX + width/2, newY - 50, Phaser.Math.RND.pick(['🍕','🌮']), {
                 fontSize: '48px',
                 shadow: { offsetX: 0, offsetY: 0, color: '#ffcc00', blur: 10 }
             });
@@ -166,7 +154,9 @@ function update() {
             foods.add(food);
         }
 
-        // Remove old platforms/foods
+        lastPlatformX += width;
+
+        // Remove old platforms and food
         platforms.children.iterate(p => { if (p.x + p.width/2 < player.x - 800) p.destroy(); });
         foods.children.iterate(f => { if (f.x < player.x - 800) f.destroy(); });
     }
@@ -186,7 +176,6 @@ function eatFood(mochkil, food) {
         duration: 200,
         onComplete: () => food.destroy()
     });
-
     this.tweens.add({
         targets: mochkil,
         scaleX: 1.3,
