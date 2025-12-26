@@ -64,10 +64,10 @@ const clouds = [
     {x:450, y:80},
     {x:650, y:40}
 ];
-// Rainbow raised so bottom touches top of green band
-const rainbow = {x:WIDTH-64, y:ROAD_Y - GREEN_HEIGHT + 64, emoji:"🌈"}; // flush right, stationary
+// Rainbow bottom flush with green band
+const rainbow = {x:WIDTH-64, y:ROAD_Y - GREEN_HEIGHT + 48, emoji:"🌈"}; // flush right, stationary
 
-// ---- Pre-generate some items for starting screen ----
+// ---- Pre-generate items ----
 for(let i=0; i<10; i++){
     let fx = player.x - i*80;
     foods.push({ x:fx, y:ROAD_Y-48, emoji:FOOD_EMOJIS[Math.floor(Math.random()*FOOD_EMOJIS.length)], collected:false });
@@ -93,16 +93,18 @@ function update(){
     // Gravity
     player.vy += 0.6;
     player.y += player.vy;
+
+    // Lock player and raccoon to top of grey road
     if(player.y > ROAD_Y - player.h){ 
         player.y = ROAD_Y - player.h; 
         player.vy=0; 
         player.jumping=false; 
     }
+    mochkil.y = ROAD_Y - mochkil.h;
 
     // Mochkil follows player
     let dx = player.x - mochkil.x;
     mochkil.x += dx * 0.05;
-    mochkil.y = ROAD_Y - mochkil.h;
 
     // Scroll world
     scrollX = player.x - (WIDTH-150);
