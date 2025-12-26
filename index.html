@@ -36,8 +36,8 @@ const ctx = canvas.getContext("2d");
 const WIDTH = canvas.width;
 const HEIGHT = canvas.height;
 
-const ROAD_Y = HEIGHT - 80;
-const GREEN_HEIGHT = 80; // green band
+const ROAD_Y = HEIGHT - 80;       // bottom of grey road
+const GREEN_HEIGHT = 80;
 const GREY_HEIGHT = 80;
 
 let player = { x:WIDTH-100, y:ROAD_Y-GREY_HEIGHT, w:64, h:64, vy:0, jumping:false };
@@ -63,29 +63,41 @@ const FLOWER_EMOJIS = ['🌻','🪻','🌷'];
 const FOOD_EMOJIS = ['🍕','🌮'];
 
 // ---- Clouds and Rainbow ----
-const clouds = [
+let clouds = [
     {x:200, y:50},
     {x:450, y:80},
     {x:650, y:40}
 ];
-// Rainbow raised to top of green band
-const rainbow = {x:WIDTH-64, y:ROAD_Y-GREEN_HEIGHT-24, emoji:"🌈"}; 
+// Rainbow flush with top of green
+const rainbow = {x:WIDTH-64, y:ROAD_Y-GREEN_HEIGHT, emoji:"🌈"}; 
 
-// ---- Pre-generate items ----
+// Pre-generate items
 for(let i=0;i<10;i++){
     // Food
     let fx = player.x - i*80;
     foods.push({ x:fx, y:ROAD_Y-GREY_HEIGHT, emoji:FOOD_EMOJIS[Math.floor(Math.random()*FOOD_EMOJIS.length)], collected:false });
     
-    // Decorations
+    // Decorations (houses at top of green, trees/flowers scattered)
     let dx = i*150 + 50;
-    let dy = ROAD_Y - GREEN_HEIGHT + 20; // top of green band for houses
+    let dy;
     let emoji;
-    if(i%3===0) emoji = HOUSE_EMOJIS[Math.floor(Math.random()*HOUSE_EMOJIS.length)];
-    else if(i%3===1) emoji = TREE_EMOJIS[Math.floor(Math.random()*TREE_EMOJIS.length)];
-    else emoji = FLOWER_EMOJIS[Math.floor(Math.random()*FLOWER_EMOJIS.length)];
+    if(i%3===0){ 
+        emoji = HOUSE_EMOJIS[Math.floor(Math.random()*HOUSE_EMOJIS.length)];
+        dy = ROAD_Y - GREEN_HEIGHT + 10; // top of green
+    } else if(i%3===1){
+        emoji = TREE_EMOJIS[Math.floor(Math.random()*TREE_EMOJIS.length)];
+        dy = ROAD_Y - GREEN_HEIGHT + 30 + Math.random()*30;
+    } else {
+        emoji = FLOWER_EMOJIS[Math.floor(Math.random()*FLOWER_EMOJIS.length)];
+        dy = ROAD_Y - GREEN_HEIGHT + 40 + Math.random()*30;
+    }
     decorations.push({x:dx, y:dy, emoji:emoji});
 }
+
+// Randomize cloud y-positions within sky area
+clouds.forEach(c=>{
+    c.y = 20 + Math.random()*(ROAD_Y - GREEN_HEIGHT - 50);
+});
 
 // ---- Game loop ----
 function gameLoop(){
@@ -122,6 +134,9 @@ function update(){
         let fx = player.x - WIDTH - Math.random()*400;
         foods.push({x:fx, y:ROAD_Y-GREY_HEIGHT, emoji:FOOD_EMOJIS[Math.floor(Math.random()*FOOD_EMOJIS.length)], collected:false});
     }
+
+    // Remove foods far behind
+    foods = foods.filter(f=>f.x > player.x - WIDTH*2);
 }
 
 // ---- Draw everything ----
@@ -138,18 +153,19 @@ function draw(){
 
     // Clouds
     clouds.forEach(c=>{
-        ctx.fillText("☁️",c.x,c.y);
+        ctx.font="48px sans-serif";
+        ctx.fillText("☁️",c.x-scrollX,c.y);
     });
 
     // Rainbow
     ctx.font="64px sans-serif";
-    ctx.fillText(rainbow.emoji,rainbow.x,rainbow.y);
+    ctx.fillText(rainbow.emoji,rainbow.x-scrollX,rainbow.y);
 
     // Green band
     ctx.fillStyle="#2ecc71";
     ctx.fillRect(0,ROAD_Y-GREEN_HEIGHT,WIDTH,GREEN_HEIGHT);
 
-    // Decorations (houses, trees, flowers)
+    // Decorations
     decorations.forEach(d=>{
         if(d.x>scrollX-100 && d.x<scrollX+WIDTH+100){
             ctx.font="48px sans-serif";
