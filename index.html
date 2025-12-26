@@ -38,10 +38,9 @@ const HEIGHT = canvas.height;
 
 const ROAD_Y = HEIGHT - 80;
 const GREEN_HEIGHT = 160; 
-const SKY_HEIGHT = 80;    
 
-let player = { x:WIDTH-100, y:ROAD_Y-64 + 20, w:64, h:64, vy:0, jumping:false };
-let mochkil = { x:WIDTH-150, y:ROAD_Y-64 + 20, w:64, h:64 };
+let player = { x:WIDTH-100, y:ROAD_Y-64, w:64, h:64, vy:0, jumping:false };
+let mochkil = { x:WIDTH-150, y:ROAD_Y-64, w:64, h:64 };
 let foods = [];
 let decorations = [];
 
@@ -62,7 +61,7 @@ const FOOD_EMOJIS = ['🍕','🌮'];
 // ---- Pre-generate some items for starting screen (left of player) ----
 for(let i=0; i<10; i++){
     let fx = player.x - i*80; // left of player
-    foods.push({ x:fx, y:ROAD_Y-64 + 20, emoji:FOOD_EMOJIS[Math.floor(Math.random()*FOOD_EMOJIS.length)], collected:false });
+    foods.push({ x:fx, y:ROAD_Y-48, emoji:FOOD_EMOJIS[Math.floor(Math.random()*FOOD_EMOJIS.length)], collected:false });
     let dx = player.x - i*150 - 100;
     let dy = ROAD_Y - GREEN_HEIGHT + 20 + Math.random()*(GREEN_HEIGHT - 60);
     decorations.push({ x:dx, y:dy, emoji:DECOR_EMOJIS[Math.floor(Math.random()*DECOR_EMOJIS.length)] });
@@ -85,12 +84,16 @@ function update(){
     // Gravity
     player.vy += 0.6;
     player.y += player.vy;
-    if(player.y > ROAD_Y-64 + 20){ player.y = ROAD_Y-64 + 20; player.vy=0; player.jumping=false; }
+    if(player.y > ROAD_Y - player.h){ 
+        player.y = ROAD_Y - player.h; 
+        player.vy=0; 
+        player.jumping=false; 
+    }
 
     // Mochkil follows player
     let dx = player.x - mochkil.x;
     mochkil.x += dx * 0.05;
-    mochkil.y = ROAD_Y-64 + 20;
+    mochkil.y = ROAD_Y - mochkil.h; // always on top of road
 
     // Scroll world so player stays ~150px from right
     scrollX = player.x - (WIDTH-150);
@@ -98,7 +101,7 @@ function update(){
     // Spawn food dynamically ahead (to the left)
     if(Math.random()<0.02){
         let fx = player.x - WIDTH - Math.random()*400;
-        foods.push({ x:fx, y:ROAD_Y-64 + 20, emoji:FOOD_EMOJIS[Math.floor(Math.random()*FOOD_EMOJIS.length)], collected:false });
+        foods.push({ x:fx, y:ROAD_Y-48, emoji:FOOD_EMOJIS[Math.floor(Math.random()*FOOD_EMOJIS.length)], collected:false });
     }
 
     // Spawn decorations dynamically ahead (to the left)
@@ -124,9 +127,9 @@ function update(){
 function draw(){
     ctx.clearRect(0,0,WIDTH,HEIGHT);
 
-    // ---- Sky (double height) ----
+    // ---- Sky (fills everything above green) ----
     ctx.fillStyle="#87ceeb";
-    ctx.fillRect(0, ROAD_Y - GREEN_HEIGHT - SKY_HEIGHT*2, WIDTH, SKY_HEIGHT*2);
+    ctx.fillRect(0, 0, WIDTH, ROAD_Y - GREEN_HEIGHT);
 
     // ---- Stationary sun/cloud in top-left ----
     ctx.font="48px sans-serif";
