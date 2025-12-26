@@ -1,4 +1,4 @@
-const CONTROL_BAR_HEIGHT = 120;
+const CONTROL_BAR_HEIGHT = 140;
 
 const config = {
     type: Phaser.AUTO,
@@ -19,53 +19,49 @@ const config = {
     }
 };
 
-const game = new Phaser.Game(config);
+new Phaser.Game(config);
 
-let player, mochkil, cursors;
+let player, mochkil;
 let leftDown = false;
 let rightDown = false;
 let jumpDown = false;
-let ground;
-let foods;
+let ground, foods;
 
-function preload() {
-    // No assets needed — emojis only
-}
+function preload() {}
 
 function create() {
-    console.log('Scene started');
+    // =====================
+    // WORLD HEIGHT (scene)
+    // =====================
+    const WORLD_HEIGHT = config.height - CONTROL_BAR_HEIGHT;
 
-    // === GROUND (ROAD) ===
+    // ===== GROUND =====
     ground = this.add.rectangle(
         1000,
-        config.height - CONTROL_BAR_HEIGHT - 20,
+        WORLD_HEIGHT - 20,
         2000,
         40,
         0x666666
     );
     this.physics.add.existing(ground, true);
 
-    // === PLAYER (AZUL) ===
-    player = this.add.text(100, 300, '🐱', {
-        fontSize: '64px'
-    });
+    // ===== PLAYER (AZUL) =====
+    player = this.add.text(100, 200, '🐱', { fontSize: '64px' });
     this.physics.add.existing(player);
     player.body.setCollideWorldBounds(true);
     player.body.setBounce(0.2);
     player.body.setSize(40, 40);
     player.body.setOffset(10, 20);
 
-    // === MOCHKIL (TUXEDO KITTEN) ===
-    mochkil = this.add.text(40, 300, '🐈‍⬛', {
-        fontSize: '64px'
-    });
+    // ===== MOCHKIL (TUXEDO) =====
+    mochkil = this.add.text(30, 200, '🐈‍⬛', { fontSize: '64px' });
     this.physics.add.existing(mochkil);
     mochkil.body.setCollideWorldBounds(true);
     mochkil.body.setBounce(0.3);
     mochkil.body.setSize(40, 40);
     mochkil.body.setOffset(10, 20);
 
-    // === FOOD ===
+    // ===== FOOD =====
     foods = this.physics.add.group();
 
     ['🍕', '🌮'].forEach((emoji, i) => {
@@ -77,26 +73,31 @@ function create() {
         foods.add(food);
     });
 
-    // === COLLISIONS ===
+    // ===== COLLISIONS =====
     this.physics.add.collider(player, ground);
     this.physics.add.collider(mochkil, ground);
     this.physics.add.collider(foods, ground);
-
     this.physics.add.overlap(mochkil, foods, eatFood, null, this);
 
-    // === CAMERA ===
+    // ===== CAMERA (WORLD ONLY) =====
     this.cameras.main.startFollow(player);
-    this.cameras.main.setBounds(
-        0,
-        0,
-        2000,
-        config.height - CONTROL_BAR_HEIGHT
-    );
+    this.cameras.main.setBounds(0, 0, 2000, WORLD_HEIGHT);
 
-    // === CONTROLS ===
-    cursors = this.input.keyboard.createCursorKeys();
+    // =====================
+    // UI CONTROL BAR
+    // =====================
+    const uiBar = this.add.rectangle(
+        config.width / 2,
+        WORLD_HEIGHT + CONTROL_BAR_HEIGHT / 2,
+        config.width,
+        CONTROL_BAR_HEIGHT,
+        0x111111
+    )
+    .setScrollFactor(0)
+    .setDepth(500);
 
-    const buttonY = config.height - CONTROL_BAR_HEIGHT + 20;
+    // ===== BUTTONS =====
+    const buttonY = WORLD_HEIGHT + 30;
 
     createButton(this, 80, buttonY, '◀',
         () => leftDown = true,
@@ -115,24 +116,23 @@ function create() {
 }
 
 function update() {
-    // === PLAYER MOVEMENT ===
-    if (leftDown || cursors.left.isDown) {
+    // ===== PLAYER MOVEMENT =====
+    if (leftDown) {
         player.body.setVelocityX(-220);
-    } else if (rightDown || cursors.right.isDown) {
+    } else if (rightDown) {
         player.body.setVelocityX(220);
     } else {
         player.body.setVelocityX(0);
     }
 
-    if ((jumpDown || cursors.up.isDown) && player.body.blocked.down) {
+    if (jumpDown && player.body.blocked.down) {
         player.body.setVelocityY(-450);
     }
 
-    // === MOCHKIL AI ===
-    const distance = player.x - mochkil.x;
-
-    if (Math.abs(distance) > 60) {
-        mochkil.body.setVelocityX(Math.sign(distance) * 160);
+    // ===== MOCHKIL AI =====
+    const dx = player.x - mochkil.x;
+    if (Math.abs(dx) > 60) {
+        mochkil.body.setVelocityX(Math.sign(dx) * 160);
     } else {
         mochkil.body.setVelocityX(0);
     }
@@ -140,7 +140,6 @@ function update() {
 
 function eatFood(mochkil, food) {
     food.destroy();
-    console.log('Mochkil ate food!');
 }
 
 function createButton(scene, x, y, label, onDown, onUp) {
@@ -154,7 +153,7 @@ function createButton(scene, x, y, label, onDown, onUp) {
     })
     .setScrollFactor(0)
     .setDepth(1000)
-    .setInteractive({ useHandCursor: true });
+    .setInteractive();
 
     btn.on('pointerdown', onDown);
     btn.on('pointerup', onUp);
