@@ -23,7 +23,7 @@ let player, mochkil, cursors, platforms;
 function preload() {
     this.load.image('tiles', 'assets/sprites/tileset.png');
     this.load.image('azul', 'assets/sprites/azul.png');
-    this.load.image('mochkil', 'assets/sprites/mochkil_tuxedo.png');
+    this.load.image('mochkil', 'assets/sprites/mochkil.png');
 }
 
 function create() {
