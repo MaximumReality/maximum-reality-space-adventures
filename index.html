@@ -2,173 +2,205 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Maximum Reality Space Adventures</title>
+<title>Maximum Reality – Night Run</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <style>
-body { margin:0; overflow:hidden; background:#111; font-family:sans-serif; }
-canvas { display:block; }
-.button { 
-    position: fixed; 
-    font-size: 48px; 
-    background:#ffcc00; 
-    color:#000; 
-    padding: 12px 20px; 
-    border-radius:8px; 
-    user-select:none; 
-    z-index:1000;
+html,body{
+  margin:0;
+  padding:0;
+  overflow:hidden;
+  background:#000;
+  touch-action:none;
+  font-family:sans-serif;
 }
-#left { left:20px; bottom:20px; }
-#right { left:120px; bottom:20px; }
-#jump { right:20px; bottom:20px; }
+
+#game{
+  display:block;
+}
+
+#controls{
+  position:fixed;
+  bottom:10px;
+  left:50%;
+  transform:translateX(-50%);
+  display:flex;
+  gap:12px;
+  z-index:10;
+}
+
+button{
+  font-size:26px;
+  padding:12px 18px;
+  border-radius:12px;
+  border:none;
+  background:#222;
+  color:#fff;
+}
 </style>
 </head>
+
 <body>
 
-<div id="left" class="button">◀</div>
-<div id="right" class="button">▶</div>
-<div id="jump" class="button">⬆</div>
+<canvas id="game"></canvas>
 
-<canvas id="gameCanvas" width="800" height="600"></canvas>
+<div id="controls">
+  <button id="left">⬅️</button>
+  <button id="jump">⬆️</button>
+  <button id="right">➡️</button>
+</div>
 
 <script>
-const canvas = document.getElementById("gameCanvas");
+const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
-const WIDTH = canvas.width;
-const HEIGHT = canvas.height;
+function resize(){
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener("resize", resize);
 
-const ROAD_Y = HEIGHT - 80;       // Bottom of road
-const GREEN_HEIGHT = 100;
-const GREY_HEIGHT = 80;
+/* WORLD LAYOUT */
+const roadH = 80;
+const grassH = 120;
 
-let player = { x:150, y:0, w:64, h:64, vy:0, jumping:false };
+/* PLAYER */
+const player = {
+  x: 200,
+  y: 0,
+  vy: 0,
+  jumping:false,
+  dir:"right"
+};
+
+/* SCROLL */
 let scrollX = 0;
 
-// Buttons
-let leftDown=false, rightDown=false, jumpDown=false;
-document.getElementById('left').addEventListener('touchstart', ()=>leftDown=true);
-document.getElementById('left').addEventListener('touchend', ()=>leftDown=false);
-document.getElementById('right').addEventListener('touchstart', ()=>rightDown=true);
-document.getElementById('right').addEventListener('touchend', ()=>rightDown=false);
-document.getElementById('jump').addEventListener('touchstart', ()=>jumpDown=true);
-document.getElementById('jump').addEventListener('touchend', ()=>jumpDown=false);
+/* INPUT */
+let left=false, right=false, jump=false;
 
-// Decorations
-const CITY = ['🏡','🏠','🏚️','⛪️','🏥','🏦','🏨','🏢','🏟️','🕍','🏗️','🕌','🏭','🏪','🏫','🏠','🏡'];
-let cityObjects = [];
-for(let i=0;i<50;i++){
-    cityObjects.push({
-        x: i*160,
-        y: ROAD_Y-GREEN_HEIGHT + 10 + Math.random()*30,
-        emoji: CITY[Math.floor(Math.random()*CITY.length)]
-    });
+function bind(btn, down, up){
+  btn.addEventListener("touchstart", e=>{e.preventDefault(); down();});
+  btn.addEventListener("touchend", e=>{e.preventDefault(); up();});
 }
 
-// Clouds
-let clouds = [
-    {x:200, y:50},
-    {x:450, y:80},
-    {x:650, y:40}
+bind(leftBtn = document.getElementById("left"),
+  ()=>left=true, ()=>left=false);
+bind(rightBtn = document.getElementById("right"),
+  ()=>right=true, ()=>right=false);
+bind(jumpBtn = document.getElementById("jump"),
+  ()=>jump=true, ()=>jump=false);
+
+/* BACKGROUND DECOR */
+const buildings = [];
+for(let i=0;i<80;i++){
+  buildings.push({
+    x:i*200,
+    emoji:["🏢","🏬","🏭","🏨","🏦","🏥","🏠","🏡","🕌","⛪️","🏟️"][i%11]
+  });
+}
+
+const stars = [];
+for(let i=0;i<120;i++){
+  stars.push({
+    x:Math.random()*5000,
+    y:Math.random()*300,
+    emoji:["⭐️","✨","🌟"][i%3]
+  });
+}
+
+const clouds = [
+  {x:200,y:120},{x:600,y:160},{x:1000,y:100}
 ];
 
-// Stars
-let stars = [];
-for(let i=0;i<100;i++){
-    stars.push({x:Math.random()*WIDTH*3, y:Math.random()*(ROAD_Y-GREEN_HEIGHT), size:1+Math.random()*2});
-}
-
-// Moon
-const moon = {x:50, y:80, emoji:'🌖'};
-
-// ---- Set player y on top of grey road ----
-player.y = ROAD_Y-GREY_HEIGHT-player.h/2;
-
-// ---- Game loop ----
-function gameLoop(){
-    update();
-    draw();
-    requestAnimationFrame(gameLoop);
-}
-
-// ---- Update ----
+/* LOOP */
 function update(){
-    // Player moves
-    if(leftDown) player.x -=5;
-    if(rightDown) player.x +=5;
+  if(left){
+    scrollX -= 5;
+    player.dir="left";
+  }
+  if(right){
+    scrollX += 5;
+    player.dir="right";
+  }
 
-    // Jumping
-    if(jumpDown && !player.jumping){ player.vy=-12; player.jumping=true; }
-    player.vy += 0.6;
-    player.y += player.vy;
-    if(player.y > ROAD_Y-GREY_HEIGHT-player.h/2){
-        player.y = ROAD_Y-GREY_HEIGHT-player.h/2;
-        player.vy = 0;
-        player.jumping=false;
-    }
+  if(jump && !player.jumping){
+    player.vy = -18;
+    player.jumping = true;
+  }
 
-    // Scroll so player stays near left
-    scrollX = player.x - 150;
+  player.vy += 1;
+  player.y += player.vy;
 
-    // Clouds parallax
-    clouds.forEach(c=>{
-        c.x += 0.5;
-        if(c.x - scrollX > WIDTH) c.x -= WIDTH + 200;
-        if(c.x - scrollX < -100) c.x += WIDTH + 200;
-    });
-
-    // Stars parallax
-    stars.forEach(s=>{
-        s.x += 0.2;
-        if(s.x - scrollX > WIDTH) s.x -= WIDTH*3;
-        if(s.x - scrollX < -100) s.x += WIDTH*3;
-    });
+  const groundY = canvas.height - roadH - 42;
+  if(player.y > groundY){
+    player.y = groundY;
+    player.vy = 0;
+    player.jumping = false;
+  }
 }
 
-// ---- Draw ----
 function draw(){
-    ctx.clearRect(0,0,WIDTH,HEIGHT);
+  ctx.clearRect(0,0,canvas.width,canvas.height);
 
-    // Sky (dark blue)
-    ctx.fillStyle = "#0b1d51";
-    ctx.fillRect(0,0,WIDTH,ROAD_Y-GREEN_HEIGHT);
+  /* SKY */
+  ctx.fillStyle="#020a2a";
+  ctx.fillRect(0,0,canvas.width,canvas.height);
 
-    // Stars
-    stars.forEach(s=>{
-        ctx.fillStyle = "#fff";
-        ctx.beginPath();
-        ctx.arc(s.x - scrollX*0.2, s.y, s.size, 0, Math.PI*2);
-        ctx.fill();
-    });
+  /* STARS */
+  ctx.font="16px sans-serif";
+  stars.forEach(s=>{
+    ctx.fillText(s.emoji, s.x - scrollX*0.2, s.y);
+  });
 
-    // Moon
-    ctx.font="48px sans-serif";
-    ctx.fillText(moon.emoji, moon.x, moon.y);
+  /* CLOUDS */
+  ctx.font="48px sans-serif";
+  clouds.forEach(c=>{
+    ctx.fillText("☁️", c.x - scrollX*0.15, c.y);
+  });
 
-    // Clouds
-    ctx.font="48px sans-serif";
-    clouds.forEach(c=>{
-        ctx.fillText("☁️", c.x - scrollX*0.5, c.y);
-    });
+  /* GRASS */
+  ctx.fillStyle="#2f7d32";
+  ctx.fillRect(
+    0,
+    canvas.height-roadH-grassH,
+    canvas.width,
+    grassH
+  );
 
-    // Green grass
-    ctx.fillStyle="#2ecc71";
-    ctx.fillRect(0,ROAD_Y-GREEN_HEIGHT,WIDTH,GREEN_HEIGHT);
+  /* CITY */
+  ctx.font="40px sans-serif";
+  buildings.forEach(b=>{
+    ctx.fillText(
+      b.emoji,
+      b.x - scrollX*0.5,
+      canvas.height-roadH-grassH+50
+    );
+  });
 
-    // City objects
-    ctx.font="48px sans-serif";
-    cityObjects.forEach(obj=>{
-        ctx.fillText(obj.emoji, obj.x - scrollX, obj.y);
-    });
+  /* ROAD */
+  ctx.fillStyle="#555";
+  ctx.fillRect(
+    0,
+    canvas.height-roadH,
+    canvas.width,
+    roadH
+  );
 
-    // Grey road
-    ctx.fillStyle="#666";
-    ctx.fillRect(0,ROAD_Y,WIDTH,GREY_HEIGHT);
-
-    // Player
-    ctx.font="64px sans-serif";
-    ctx.fillText("🏃🏼‍♀️", player.x - scrollX, player.y);
+  /* PLAYER */
+  ctx.font="56px sans-serif";
+  const emoji = player.dir==="right" ? "🏃🏼‍♀️‍➡️" : "🏃‍♀️";
+  ctx.fillText(emoji, player.x, player.y);
 }
 
-gameLoop();
+function loop(){
+  update();
+  draw();
+  requestAnimationFrame(loop);
+}
+
+loop();
 </script>
 
 </body>
