@@ -21,13 +21,15 @@ const game = new Phaser.Game(config);
 
 let player;
 let mochkil;
-let cursors;
 let platforms;
 let foods;
 
-function preload() {
-    // No assets needed
-}
+// TOUCH STATE
+let moveLeft = false;
+let moveRight = false;
+let jump = false;
+
+function preload() {}
 
 function create() {
     // WORLD
@@ -51,24 +53,35 @@ function create() {
     mochkil.body.setCollideWorldBounds(true);
     this.physics.add.collider(mochkil, platforms);
 
-    // FOOD GROUP 🍕🌮
+    // FOOD 🍕🌮
     foods = this.physics.add.group();
-
     addFood(this, 400, 520, '🍕');
-    addFood(this, 650, 520, '🌮');
-    addFood(this, 900, 520, '🍕');
-    addFood(this, 1200, 520, '🌮');
+    addFood(this, 700, 520, '🌮');
+    addFood(this, 1000, 520, '🍕');
 
-    // COLLISIONS
     this.physics.add.collider(foods, platforms);
     this.physics.add.overlap(mochkil, foods, eatFood, null, this);
-
-    // INPUT
-    cursors = this.input.keyboard.createCursorKeys();
 
     // CAMERA
     this.cameras.main.startFollow(player);
     this.cameras.main.setBounds(0, 0, 1600, 600);
+
+    // TOUCH CONTROLS
+    createButton(this, 80, 520, '◀', () => moveLeft = true, () => moveLeft = false);
+    createButton(this, 180, 520, '▶', () => moveRight = true, () => moveRight = false);
+    createButton(this, 720, 520, '⬆', () => jump = true, () => jump = false);
+}
+
+function createButton(scene, x, y, label, onDown, onUp) {
+    const btn = scene.add.text(x, y, label, {
+        fontSize: '48px',
+        backgroundColor: '#333',
+        padding: { x: 10, y: 5 }
+    }).setScrollFactor(0).setInteractive();
+
+    btn.on('pointerdown', onDown);
+    btn.on('pointerup', onUp);
+    btn.on('pointerout', onUp);
 }
 
 function addFood(scene, x, y, emoji) {
@@ -80,24 +93,22 @@ function addFood(scene, x, y, emoji) {
 
 function eatFood(mochkil, food) {
     food.destroy();
-
-    // Tiny bounce when Mochkil eats
     mochkil.body.setVelocityY(-200);
 }
 
 function update() {
-    // PLAYER MOVEMENT
     const speed = 200;
 
-    if (cursors.left.isDown) {
+    // PLAYER MOVEMENT (TOUCH)
+    if (moveLeft) {
         player.body.setVelocityX(-speed);
-    } else if (cursors.right.isDown) {
+    } else if (moveRight) {
         player.body.setVelocityX(speed);
     } else {
         player.body.setVelocityX(0);
     }
 
-    if (cursors.up.isDown && player.body.blocked.down) {
+    if (jump && player.body.blocked.down) {
         player.body.setVelocityY(-400);
     }
 
