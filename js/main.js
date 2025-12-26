@@ -45,16 +45,16 @@ function create() {
     lastPlatformX = 400;
 
     // Player Azul
-    player = this.add.text(100, lastPlatformY - 64, '🐱', {
+    const spawnY = lastPlatformY - 64; // Spawn above platform
+    player = this.add.text(100, spawnY, '🐱', {
         fontSize: '64px',
         shadow: { offsetX:0, offsetY:0, color:'#00ffff', blur:12 }
     });
     this.physics.add.existing(player);
     setupBody(player, 0.2);
-    player.inSpace = false;
 
     // Mochkil
-    mochkil = this.add.text(30, lastPlatformY - 64, '🐈‍⬛', {
+    mochkil = this.add.text(30, spawnY, '🐈‍⬛', {
         fontSize: '64px',
         shadow: { offsetX:0, offsetY:0, color:'#ffffff', blur:10 }
     });
@@ -108,7 +108,7 @@ function update() {
         platforms.children.iterate(p=>{
             if(p.x > mochkil.x && p.x < mochkil.x + 100) nextPlatform = p;
         });
-        if(nextPlatform && mochkil.y > nextPlatform.y - 70){
+        if(nextPlatform && mochkil.y + mochkil.body.height > nextPlatform.y - 10){
             mochkil.body.setVelocityY(-450);
         }
     }
@@ -119,7 +119,7 @@ function update() {
     // Spawn new platforms
     if(player.x + 600 > lastPlatformX){
         const width = Phaser.Math.Between(200,400);
-        const gap = Phaser.Math.Between(50, 120); // small gap between platforms
+        const gap = Phaser.Math.Between(50, 120);
         const maxDelta = 20;
         const newY = Phaser.Math.Clamp(lastPlatformY + Phaser.Math.Between(-maxDelta, maxDelta), WORLD_HEIGHT-80, WORLD_HEIGHT-40);
         spawnPlatform(this, lastPlatformX + gap, newY, width);
