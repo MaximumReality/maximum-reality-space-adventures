@@ -59,11 +59,11 @@ document.getElementById('jump').addEventListener('touchend', ()=>jumpDown=false)
 const DECOR_EMOJIS = ['🌲','🌳','🏡','🏠'];
 const FOOD_EMOJIS = ['🍕','🌮'];
 
-// ---- Pre-generate some items in front of starting player ----
+// ---- Pre-generate some items for starting screen (left of player) ----
 for(let i=0; i<10; i++){
-    let fx = player.x + i*80;
+    let fx = player.x - i*80; // left of player
     foods.push({ x:fx, y:ROAD_Y-64 + 20, emoji:FOOD_EMOJIS[Math.floor(Math.random()*FOOD_EMOJIS.length)], collected:false });
-    let dx = player.x + i*150 + 100;
+    let dx = player.x - i*150 - 100;
     let dy = ROAD_Y - GREEN_HEIGHT + 20 + Math.random()*(GREEN_HEIGHT - 60);
     decorations.push({ x:dx, y:dy, emoji:DECOR_EMOJIS[Math.floor(Math.random()*DECOR_EMOJIS.length)] });
 }
@@ -95,15 +95,15 @@ function update(){
     // Scroll world so player stays ~150px from right
     scrollX = player.x - (WIDTH-150);
 
-    // Spawn food dynamically
+    // Spawn food dynamically ahead (to the left)
     if(Math.random()<0.02){
-        let fx = player.x + WIDTH + Math.random()*400;
+        let fx = player.x - WIDTH - Math.random()*400;
         foods.push({ x:fx, y:ROAD_Y-64 + 20, emoji:FOOD_EMOJIS[Math.floor(Math.random()*FOOD_EMOJIS.length)], collected:false });
     }
 
-    // Spawn decorations dynamically
+    // Spawn decorations dynamically ahead (to the left)
     if(Math.random()<0.03){
-        let dx = player.x + WIDTH + Math.random()*500;
+        let dx = player.x - WIDTH - Math.random()*500;
         let dy = ROAD_Y - GREEN_HEIGHT + 20 + Math.random()*(GREEN_HEIGHT - 60);
         decorations.push({ x:dx, y:dy, emoji:DECOR_EMOJIS[Math.floor(Math.random()*DECOR_EMOJIS.length)] });
     }
@@ -116,8 +116,8 @@ function update(){
     });
 
     // Remove old food and decorations far behind
-    foods = foods.filter(f=>f.x > player.x - WIDTH);
-    decorations = decorations.filter(d=>d.x > player.x - WIDTH);
+    foods = foods.filter(f=>f.x > player.x - WIDTH*2);
+    decorations = decorations.filter(d=>d.x > player.x - WIDTH*2);
 }
 
 // ---- Draw everything ----
