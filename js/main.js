@@ -1,5 +1,5 @@
 const CONTROL_BAR_HEIGHT = 140;
-const WORLD_WIDTH = 2000;
+const WORLD_HEIGHT = 600 - CONTROL_BAR_HEIGHT;
 
 const config = {
     type: Phaser.AUTO,
@@ -26,26 +26,24 @@ let player, mochkil;
 let leftDown = false;
 let rightDown = false;
 let jumpDown = false;
-let ground, foods;
+let platforms, foods;
 let idleTime = 0;
+let lastPlatformX = 0;
 
 function preload() {}
 
 function create() {
-    const WORLD_HEIGHT = config.height - CONTROL_BAR_HEIGHT;
+    // ✅ Infinite world
+    this.physics.world.setBounds(0, 0, Number.MAX_SAFE_INTEGER, WORLD_HEIGHT);
+    this.cameras.main.setBounds(0, 0, Number.MAX_SAFE_INTEGER, WORLD_HEIGHT);
 
-    // ✅ FIX: SET PHYSICS WORLD SIZE
-    this.physics.world.setBounds(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
+    // ===== GROUPS =====
+    platforms = this.physics.add.staticGroup();
+    foods = this.physics.add.group();
 
-    // ===== GROUND =====
-    ground = this.add.rectangle(
-        WORLD_WIDTH / 2,
-        WORLD_HEIGHT - 20,
-        WORLD_WIDTH,
-        40,
-        0x666666
-    );
-    this.physics.add.existing(ground, true);
+    // ===== INITIAL PLATFORM =====
+    spawnPlatform(this, 0, WORLD_HEIGHT - 20, 400);
+    lastPlatformX = 400;
 
     // ===== PLAYER (AZUL) =====
     player = this.add.text(100, 200, '🐱', {
@@ -63,28 +61,14 @@ function create() {
     this.physics.add.existing(mochkil);
     setupBody(mochkil, 0.3);
 
-    // ===== FOOD =====
-    foods = this.physics.add.group();
-
-    ['🍕', '🌮'].forEach((emoji, i) => {
-        const food = this.add.text(400 + i * 300, 0, emoji, {
-            fontSize: '48px',
-            shadow: { offsetX: 0, offsetY: 0, color: '#ffcc00', blur: 10 }
-        });
-        this.physics.add.existing(food);
-        food.body.setBounce(0.7);
-        foods.add(food);
-    });
-
     // ===== COLLISIONS =====
-    this.physics.add.collider(player, ground);
-    this.physics.add.collider(mochkil, ground);
-    this.physics.add.collider(foods, ground);
+    this.physics.add.collider(player, platforms);
+    this.physics.add.collider(mochkil, platforms);
+    this.physics.add.collider(foods, platforms);
     this.physics.add.overlap(mochkil, foods, eatFood, null, this);
 
     // ===== CAMERA =====
     this.cameras.main.startFollow(player);
-    this.cameras.main.setBounds(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
 
     // ===== UI BAR =====
     this.add.rectangle(
@@ -133,6 +117,41 @@ function update() {
         player.y += Math.sin(idleTime) * 0.2;
         mochkil.y += Math.sin(idleTime + 1) * 0.25;
     }
+
+    // ===== SPAWN NEW PLATFORM =====
+    if (player.x + 600 > lastPlatformX) {
+        const width = Phaser.Math.Between(200, 400);
+        const heightOffset = Phaser.Math.Between(-50, 50);
+        const newY = Phaser.Math.Clamp(WORLD_HEIGHT - 20 + heightOffset, 300, WORLD_HEIGHT - 20);
+        spawnPlatform(this, lastPlatformX, newY, width);
+        lastPlatformX += width;
+
+        // Random food on platform
+        if (Phaser.Math.Between(0,1)) {
+            const food = this.add.text(lastPlatformX - width/2, newY - 50, Phaser.Math.RND.pick(['🍕','🌮']), {
+                fontSize: '48px',
+                shadow: { offsetX: 0, offsetY: 0, color: '#ffcc00', blur: 10 }
+            });
+            this.physics.add.existing(food);
+            food.body.setBounce(0.7);
+            foods.add(food);
+        }
+
+        // Remove old platforms to save memory
+        platforms.children.iterate(p => {
+            if (p.x + p.width/2 < player.x - 800) p.destroy();
+        });
+
+        foods.children.iterate(f => {
+            if (f.x < player.x - 800) f.destroy();
+        });
+    }
+}
+
+function spawnPlatform(scene, x, y, width = 200) {
+    const platform = scene.add.rectangle(x + width/2, y, width, 40, 0x666666);
+    scene.physics.add.existing(platform, true);
+    platforms.add(platform);
 }
 
 function eatFood(mochkil, food) {
@@ -154,7 +173,7 @@ function eatFood(mochkil, food) {
 }
 
 function setupBody(obj, bounce) {
-    obj.body.setCollideWorldBounds(true);
+    obj.body.setCollideWorldBounds(false); // allow infinite scroll
     obj.body.setBounce(bounce);
     obj.body.setSize(40, 40);
     obj.body.setOffset(10, 20);
