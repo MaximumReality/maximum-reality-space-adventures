@@ -23,32 +23,28 @@ let cursors;
 let platforms;
 let foods;
 let lastPlatformX = 0;
-const PLATFORM_WIDTH = 200;
 
 function preload() {}
 
 function create() {
-    // Platforms
     platforms = this.physics.add.staticGroup();
+    foods = this.physics.add.group();
 
     // Initial platform
-    spawnPlatform(this, 0, 580, PLATFORM_WIDTH);
-    lastPlatformX = PLATFORM_WIDTH;
+    spawnPlatform(this, 0, 580, 400);
+    lastPlatformX = 400;
 
     // Player
-    player = this.physics.add.sprite(100, 450, null);
-    player.setDisplaySize(64, 64);
-    player.setBounce(0.2);
-    player.setCollideWorldBounds(false);
+    player = this.add.text(100, 450, '🐱', { fontSize: '64px' });
+    this.physics.add.existing(player);
+    player.body.setBounce(0.2);
+    player.body.setCollideWorldBounds(false);
 
     // Mochkil
-    mochkil = this.physics.add.sprite(50, 450, null);
-    mochkil.setDisplaySize(64, 64);
-    mochkil.setBounce(0.2);
-    mochkil.body.checkCollision.none = true; // doesn’t block player
-
-    // Food group
-    foods = this.physics.add.group();
+    mochkil = this.add.text(50, 450, '🐈‍⬛', { fontSize: '64px' });
+    this.physics.add.existing(mochkil);
+    mochkil.body.setBounce(0.2);
+    mochkil.body.checkCollision.none = true;
 
     // Colliders
     this.physics.add.collider(player, platforms);
@@ -59,57 +55,57 @@ function create() {
     // Cursors
     cursors = this.input.keyboard.createCursorKeys();
 
-    // Camera
+    // Camera follow
     this.cameras.main.startFollow(player);
     this.cameras.main.setBounds(0, 0, Number.MAX_SAFE_INTEGER, 600);
 }
 
 function update() {
     // Player movement
-    if (cursors.left.isDown) player.setVelocityX(-200);
-    else if (cursors.right.isDown) player.setVelocityX(200);
-    else player.setVelocityX(0);
+    if (cursors.left.isDown) player.body.setVelocityX(-200);
+    else if (cursors.right.isDown) player.body.setVelocityX(200);
+    else player.body.setVelocityX(0);
 
-    if (cursors.up.isDown && player.body.touching.down) player.setVelocityY(-400);
+    if (cursors.up.isDown && player.body.touching.down) player.body.setVelocityY(-400);
 
-    // Mochkil AI horizontal follow
+    // Mochkil horizontal AI
+    const dx = player.x - mochkil.x;
     const speed = 120;
-    if (Math.abs(player.x - mochkil.x) > 5) {
-        mochkil.setVelocityX(player.x > mochkil.x ? speed : -speed);
+    if (Math.abs(dx) > 5) {
+        mochkil.body.setVelocityX(dx > 0 ? speed : -speed);
     } else {
-        mochkil.setVelocityX(0);
+        mochkil.body.setVelocityX(0);
     }
 
     // Spawn new platforms ahead
     while (player.x + 600 > lastPlatformX) {
-        const y = Phaser.Math.Between(500, 580);
         const width = Phaser.Math.Between(150, 250);
+        const y = Phaser.Math.Between(500, 580);
         spawnPlatform(this, lastPlatformX, y, width);
 
         // Random food
         if (Phaser.Math.Between(0, 1)) {
-            const food = this.physics.add.sprite(lastPlatformX + width/2, y - 40, null);
-            food.setDisplaySize(48, 48);
-            food.setGravityY(800);
+            const food = this.add.text(lastPlatformX + width/2, y - 40, Phaser.Math.RND.pick(['🍕','🌮']), { fontSize: '48px' });
+            this.physics.add.existing(food);
+            food.body.setGravityY(800);
             foods.add(food);
         }
 
         lastPlatformX += width;
-    }
 
-    // Remove old platforms/food
-    platforms.children.iterate(p => {
-        if (p.x + p.displayWidth < player.x - 800) p.destroy();
-    });
-    foods.children.iterate(f => {
-        if (f.x < player.x - 800) f.destroy();
-    });
+        // Remove old platforms
+        platforms.children.iterate(p => {
+            if (p.x + p.displayWidth < player.x - 800) p.destroy();
+        });
+        foods.children.iterate(f => {
+            if (f.x < player.x - 800) f.destroy();
+        });
+    }
 }
 
 function spawnPlatform(scene, x, y, width) {
     const platform = scene.add.rectangle(x + width/2, y, width, 20, 0x666666);
-    scene.physics.add.existing(platform, true);
-    platform.body.setSize(width, 20);
+    scene.physics.add.existing(platform, true); // static body
     platforms.add(platform);
 }
 
