@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <title>Maximum Reality Space Adventures</title>
 <style>
-    body { margin:0; overflow:hidden; background:#87ceeb; font-family:sans-serif; }
+    body { margin:0; overflow:hidden; background:#222; font-family:sans-serif; }
     canvas { display:block; }
     .button { 
         position: fixed; 
@@ -35,8 +35,10 @@ const ctx = canvas.getContext("2d");
 
 const WIDTH = canvas.width;
 const HEIGHT = canvas.height;
+
 const ROAD_Y = HEIGHT - 80;
-const GRASS_HEIGHT = 320; // tall green band
+const GREEN_HEIGHT = 160; // doubled green height
+const SKY_HEIGHT = 80; // sky just above green
 
 let player = { x:WIDTH-100, y:ROAD_Y-64, w:64, h:64, vy:0, jumping:false };
 let mochkil = { x:WIDTH-150, y:ROAD_Y-64, w:64, h:64 };
@@ -54,12 +56,12 @@ document.getElementById('right').addEventListener('touchend', ()=>rightDown=fals
 document.getElementById('jump').addEventListener('touchstart', ()=>jumpDown=true);
 document.getElementById('jump').addEventListener('touchend', ()=>jumpDown=false);
 
-// ---- Spawn decorations ----
+// ---- Spawn decorations in green area ----
 function spawnDecorations(){
     const emojis = ['🌲','🌳','🏡','🏠'];
     for(let i=0; i<50; i++){
         let x = Math.random()*5000; // long world
-        let y = ROAD_Y - GRASS_HEIGHT - 50 - Math.random()*50; // above grass, above player
+        let y = ROAD_Y - GREEN_HEIGHT + Math.random()*(GREEN_HEIGHT - 64); // inside green area
         decorations.push({ x, y, emoji:emojis[Math.floor(Math.random()*emojis.length)] });
     }
 }
@@ -113,15 +115,15 @@ function update(){
 function draw(){
     ctx.clearRect(0,0,WIDTH,HEIGHT);
 
-    // Sky (rest of background above green)
+    // Sky (just above green)
     ctx.fillStyle="#87ceeb";
-    ctx.fillRect(0,0,WIDTH, ROAD_Y - GRASS_HEIGHT);
+    ctx.fillRect(0, ROAD_Y - GREEN_HEIGHT - SKY_HEIGHT, WIDTH, SKY_HEIGHT);
 
-    // Grass band
+    // Green grass band
     ctx.fillStyle="#2ecc71";
-    ctx.fillRect(0, ROAD_Y - GRASS_HEIGHT + 80, WIDTH, GRASS_HEIGHT);
+    ctx.fillRect(0, ROAD_Y - GREEN_HEIGHT, WIDTH, GREEN_HEIGHT);
 
-    // Decorations above player
+    // Decorations in green area
     decorations.forEach(d=>{
         ctx.font="48px sans-serif";
         ctx.fillText(d.emoji, d.x - scrollX, d.y);
