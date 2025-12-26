@@ -37,7 +37,7 @@ const WIDTH = canvas.width;
 const HEIGHT = canvas.height;
 
 const ROAD_Y = HEIGHT - 80;
-const GREEN_HEIGHT = 160; 
+const GREEN_HEIGHT = 80; // shorter green band
 
 let player = { x:WIDTH-100, y:ROAD_Y-64, w:64, h:64, vy:0, jumping:false };
 let mochkil = { x:WIDTH-150, y:ROAD_Y-64, w:64, h:64 };
@@ -72,7 +72,7 @@ for(let i=0; i<10; i++){
     let fx = player.x - i*80;
     foods.push({ x:fx, y:ROAD_Y-48, emoji:FOOD_EMOJIS[Math.floor(Math.random()*FOOD_EMOJIS.length)], collected:false });
     let dx = player.x - i*150 - 100;
-    let dy = ROAD_Y - GREEN_HEIGHT + 20 + Math.random()*(GREEN_HEIGHT - 60);
+    let dy = ROAD_Y - GREEN_HEIGHT + 10 + Math.random()*(GREEN_HEIGHT - 20);
     decorations.push({ x:dx, y:dy, emoji:DECOR_EMOJIS[Math.floor(Math.random()*DECOR_EMOJIS.length)] });
 }
 
@@ -118,7 +118,7 @@ function update(){
     // Spawn decorations dynamically ahead
     if(Math.random()<0.03){
         let dx = player.x - WIDTH - Math.random()*500;
-        let dy = ROAD_Y - GREEN_HEIGHT + 20 + Math.random()*(GREEN_HEIGHT - 60);
+        let dy = ROAD_Y - GREEN_HEIGHT + 10 + Math.random()*(GREEN_HEIGHT - 20);
         decorations.push({ x:dx, y:dy, emoji:DECOR_EMOJIS[Math.floor(Math.random()*DECOR_EMOJIS.length)] });
     }
 
