@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <title>Maximum Reality – Night Run</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <style>
 html,body{
   margin:0;
@@ -13,9 +14,7 @@ html,body{
   touch-action:none;
   font-family:sans-serif;
 }
-#game{
-  display:block;
-}
+#game{ display:block; }
 #controls{
   position:fixed;
   bottom:10px;
@@ -35,8 +34,11 @@ button{
 }
 </style>
 </head>
+
 <body>
+
 <canvas id="game"></canvas>
+
 <div id="controls">
   <button id="left">⬅️</button>
   <button id="jump">⬆️</button>
@@ -47,17 +49,13 @@ button{
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
-function resize(){
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
-}
+function resize(){ canvas.width=window.innerWidth; canvas.height=window.innerHeight; }
 resize();
 window.addEventListener("resize", resize);
 
 /* LOAD PLAYER IMAGES */
 const runnerRight = new Image();
 runnerRight.src = "IMG_2161.png";
-
 const runnerLeft = new Image();
 runnerLeft.src = "IMG_2162.png";
 
@@ -66,7 +64,7 @@ const roadH = 80;
 const grassH = 120;
 
 /* PLAYER */
-const player = { x: 200, y: 0, vy: 0, jumping:false, dir:"right" };
+const player = {x:200, y:0, vy:0, jumping:false, dir:"right"};
 
 /* SCROLL */
 let scrollX = 0;
@@ -81,53 +79,60 @@ bind(document.getElementById("left"), ()=>left=true, ()=>left=false);
 bind(document.getElementById("right"), ()=>right=true, ()=>right=false);
 bind(document.getElementById("jump"), ()=>jump=true, ()=>jump=false);
 
-/* BACKGROUND DECOR */
-const buildings = [];
+/* BACKGROUND */
+const buildings=[];
 for(let i=0;i<80;i++){
-  buildings.push({ x:i*200, emoji:["🏢","🏬","🏭","🏨","🏦","🏥","🏠","🏡","🕌","⛪️","🏟️"][i%11] });
+  buildings.push({x:i*200, emoji:["🏢","🏬","🏭","🏨","🏦","🏥","🏠","🏡","🕌","⛪️","🏟️"][i%11]});
 }
 
-const forest = [];
-for(let i=0;i<50;i++){
-  forest.push({ x:-i*180, emoji: ["🌲","🌳"][i%2] });
+/* FOREST TREES */
+const forest=[];
+for(let i=-2000;i<0;i+=150){
+  forest.push({x:i, emoji:Math.random()>0.5?"🌲":"🌳"});
 }
 
-const stars = [];
-for(let i=0;i<120;i++){
-  stars.push({ x:Math.random()*5000, y:Math.random()*300, emoji:["⭐️","✨","🌟"][i%3] });
+/* STARS */
+const stars=[];
+for(let i=-5000;i<5000;i+=50){
+  stars.push({x:i, y:Math.random()*300, emoji:["⭐️","✨","🌟"][i%3]});
 }
 
-const clouds = [ {x:200,y:120},{x:600,y:160},{x:1000,y:100} ];
+/* CLOUDS */
+const clouds=[{x:200,y:120},{x:600,y:160},{x:1000,y:100}];
 
-/* UFO & Cow */
-let ufo = null; // null if not flying
-let cow = null;
-function spawnUFO(){
-  const startX = scrollX + canvas.width + 200;
-  ufo = { x: startX, y:50, size:60, progress:0 };
-  cow = { x: startX, y:0, active:false };
-}
-setInterval(spawnUFO, 8000); // UFO every 8s
+/* UFO & COW */
+let ufo={active:false, x:2000, y:50, progress:0, size:60};
+let cow={active:false, x:0, y:0};
 
-/* GAME LOOP */
+/* LOOP */
 function update(){
   if(left){ scrollX -= 5; player.dir="left"; }
   if(right){ scrollX += 5; player.dir="right"; }
 
   if(jump && !player.jumping){ player.vy=-18; player.jumping=true; }
 
-  player.vy += 1;
-  player.y += player.vy;
-  const groundY = canvas.height-roadH-18;
+  player.vy+=1;
+  player.y+=player.vy;
+
+  const groundY=canvas.height-roadH-18;
   if(player.y>groundY){ player.y=groundY; player.vy=0; player.jumping=false; }
 
-  // UFO motion
-  if(ufo){
-    ufo.progress += 0.02;
-    ufo.x -= 4;
-    if(ufo.progress>0.5 && !cow.active){ cow.active=true; cow.x=ufo.x; cow.y=canvas.height-roadH-grassH+20; }
-    if(ufo.x<-100){ ufo=null; cow=null; }
+  // UFO swoop
+  if(!ufo.active && Math.random()<0.002){ ufo.active=true; ufo.x=scrollX+canvas.width+100; ufo.progress=0; cow.active=false; }
+  if(ufo.active){
+    ufo.progress+=0.01;
+    ufo.x-=2;
+    ufo.size = 60 + Math.sin(ufo.progress*Math.PI)*40;
+    if(ufo.progress>0.3 && !cow.active){
+      cow.active=true;
+      cow.x = ufo.x;
+      cow.y = canvas.height-roadH-grassH+30;
+    }
+    if(ufo.progress>=1){ ufo.active=false; cow.active=false; }
   }
+
+  // Cow rise animation
+  if(cow.active) cow.y -= 0.5;
 }
 
 function draw(){
@@ -139,15 +144,11 @@ function draw(){
 
   // STARS
   ctx.font="16px sans-serif";
-  stars.forEach(s=>ctx.fillText(s.emoji, s.x - scrollX*0.2, s.y));
+  stars.forEach(s=>ctx.fillText(s.emoji, s.x-scrollX*0.2, s.y));
 
   // CLOUDS
   ctx.font="48px sans-serif";
-  clouds.forEach(c=>ctx.fillText("☁️", c.x - scrollX*0.15, c.y));
-
-  // MOON
-  ctx.font="48px sans-serif";
-  ctx.fillText("🌖", 80, 80);
+  clouds.forEach(c=>ctx.fillText("☁️", c.x-scrollX*0.15, c.y));
 
   // GRASS
   ctx.fillStyle="#2f7d32";
@@ -155,39 +156,40 @@ function draw(){
 
   // CITY
   ctx.font="180px sans-serif";
-  buildings.forEach(b=>ctx.fillText(b.emoji, b.x - scrollX*0.5, canvas.height-roadH-grassH+10));
+  buildings.forEach(b=>ctx.fillText(b.emoji, b.x-scrollX*0.5, canvas.height-roadH-grassH+10));
 
-  // FOREST LEFT
-  ctx.font="80px sans-serif";
-  forest.forEach(f=>ctx.fillText(f.emoji, f.x - scrollX*0.5, canvas.height-roadH-grassH+10));
+  // FOREST (left)
+  ctx.font="120px sans-serif";
+  forest.forEach(f=>ctx.fillText(f.emoji, f.x-scrollX*0.5, canvas.height-roadH-grassH+20));
 
   // ROAD
   ctx.fillStyle="#555";
   ctx.fillRect(0, canvas.height-roadH, canvas.width, roadH);
 
   // PLAYER
-  const img = player.dir==="right"? runnerRight:runnerLeft;
-  ctx.drawImage(img, player.x, player.y-56, 56,56);
+  const img = player.dir==="right"?runnerRight:runnerLeft;
+  ctx.drawImage(img, player.x, player.y-56, 56, 56);
 
-  // UFO & Cow
-  if(ufo){
+  // UFO
+  if(ufo.active){
     ctx.font=ufo.size+"px sans-serif";
-    ctx.fillText("🛸", ufo.x, ufo.y);
+    ctx.fillText("🛸", ufo.x-scrollX, ufo.y);
   }
-  if(cow && cow.active){
+
+  // Cow
+  if(cow.active){
     ctx.font="48px sans-serif";
-    ctx.fillText("🐄", cow.x, cow.y);
+    ctx.fillText("🐄", cow.x-scrollX, cow.y);
   }
+
+  // MOON
+  ctx.font="72px sans-serif";
+  ctx.fillText("🌖", 50, 100);
 }
 
 function loop(){ update(); draw(); requestAnimationFrame(loop); }
-
-/* Start loop only after both images loaded */
-let imagesLoaded=0;
-runnerRight.onload = runnerLeft.onload = ()=>{
-  imagesLoaded++;
-  if(imagesLoaded===2) loop();
-}
+loop();
 </script>
+
 </body>
 </html>
