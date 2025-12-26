@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Maximum Reality Space Adventures</title>
+<style>
+    body { margin:0; overflow:hidden; background:#222; font-family:sans-serif; }
+    canvas { display:block; }
+    .button { 
+        position: absolute; 
+        font-size: 48px; 
+        background:#ffcc00; 
+        color:#000; 
+        padding: 12px 20px; 
+        border-radius:8px; 
+        user-select:none; 
+    }
+</style>
+</head>
+<body>
+
+<div id="left" class="button">◀</div>
+<div id="right" class="button">▶</div>
+<div id="jump" class="button">⬆</div>
+
+<canvas id="gameCanvas" width="800" height="600"></canvas>
+
+<script>
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+
+const WIDTH = canvas.width;
+const HEIGHT = canvas.height;
+const ROAD_Y = HEIGHT - 80;
+
+let player = { x:100, y:ROAD_Y-64, w:64, h:64, vy:0, jumping:false };
+let mochkil = { x:30, y:ROAD_Y-64, w:64, h:64, vy:0 };
+let foods = [];
+let obstacles = [];
+
+let leftDown = false, rightDown = false, jumpDown = false;
+let scrollX = 0;
+
+// ---- Buttons ----
+document.getElementById('left').addEventListener('touchstart', ()=>leftDown=true);
+document.getElementById('left').addEventListener('touchend', ()=>leftDown=false);
+document.getElementById('right').addEventListener('touchstart', ()=>rightDown=true);
+document.getElementById('right').addEventListener('touchend', ()=>rightDown=false);
+document.getElementById('jump').addEventListener('touchstart', ()=>jumpDown=true);
+document.getElementById('jump').addEventListener('touchend', ()=>jumpDown=false);
+
+// ---- Simple game loop ----
+function gameLoop(){
+    update();
+    draw();
+    requestAnimationFrame(gameLoop);
+}
+
+// ---- Update positions ----
+function update(){
+    // ---- Player movement ----
+    if(leftDown) player.x -=5;
+    if(rightDown) player.x +=5;
+    if(jumpDown && !player.jumping){ player.vy = -12; player.jumping=true; }
+    
+    // ---- Gravity ----
+    player.vy += 0.6;
+    player.y += player.vy;
+    if(player.y > ROAD_Y-64){ player.y = ROAD_Y-64; player.vy=0; player.jumping=false; }
+
+    // ---- Mochkil follows ----
+    let dx = player.x - mochkil.x;
+    mochkil.x += dx * 0.05;
+    mochkil.y = ROAD_Y-64;
+
+    // ---- Scroll world ----
+    scrollX = player.x - 150;
+
+    // ---- Spawn food ----
+    if(Math.random()<0.02){
+        let fx = player.x + WIDTH + Math.random()*400;
+        let food = { x:fx, y:ROAD_Y-64, emoji: Math.random()<0.5?'🍕':'🌮', collected:false };
+        foods.push(food);
+    }
+
+    // ---- Collect food ----
+    foods.forEach(f=>{
+        if(!f.collected && Math.abs(f.x - mochkil.x)<40){
+            f.collected=true;
+        }
+    });
+
+    // ---- Remove old food ----
+    foods = foods.filter(f=>f.x > player.x - WIDTH);
+
+    // ---- Optional obstacles ----
+    if(Math.random()<0.005){
+        let ox = player.x + WIDTH + Math.random()*600;
+        obstacles.push({ x:ox, y:ROAD_Y-40, w:40, h:40 });
+    }
+    obstacles = obstacles.filter(o=>o.x > player.x - WIDTH);
+
+    // ---- Collision with obstacles (stop player) ----
+    obstacles.forEach(o=>{
+        if(player.x + player.w>o.x && player.x<o.x+o.w && player.y + player.h>o.y){
+            player.x -= rightDown?5:0; // simple stop
+        }
+    });
+}
+
+// ---- Draw everything ----
+function draw(){
+    ctx.clearRect(0,0,WIDTH,HEIGHT);
+
+    // ---- Ground ----
+    ctx.fillStyle="#666";
+    ctx.fillRect(0,ROAD_Y-WIDTH, WIDTH, 80);
+
+    // ---- Foods ----
+    foods.forEach(f=>{
+        if(!f.collected){
+            ctx.font="48px sans-serif";
+            ctx.fillText(f.emoji, f.x - scrollX, f.y);
+        }
+    });
+
+    // ---- Obstacles ----
+    ctx.fillStyle="#aa4444";
+    obstacles.forEach(o=>{
+        ctx.fillRect(o.x - scrollX, o.y, o.w, o.h);
+    });
+
+    // ---- Player ----
+    ctx.font="64px sans-serif";
+    ctx.fillText("🐱", player.x - scrollX, player.y);
+
+    // ---- Mochkil ----
+    ctx.fillText("🐈‍⬛", mochkil.x - scrollX, mochkil.y);
+}
+
+gameLoop();
+</script>
+
+</body>
+</html>
