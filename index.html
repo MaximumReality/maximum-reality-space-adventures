@@ -78,7 +78,9 @@ const player = {
   y: 0,
   vy: 0,
   jumping:false,
-  dir:"right"
+  dir:"right",
+  width: 56,
+  height: 56
 };
 
 /* SCROLL */
@@ -100,48 +102,62 @@ bind(document.getElementById("jump"),
   ()=>jump=true, ()=>jump=false);
 
 /* BACKGROUND DECOR */
-// City buildings (right side)
+/* Buildings */
 const buildings = [];
 for(let i=0;i<80;i++){
   buildings.push({
     x:i*200,
-    emoji:["🏢","🏬","🏭","🏨","🏦","🏥","🏠","🏡","🕌","⛪️","🏟️"][i%11]
+    emoji:["🏢","🏬","🏭","🏨","🏦","🏥","🏠","🏡","🕌","⛪️","🏟️"][i%11],
+    yOffset: 10
   });
 }
 
-// Forest (left side)
-const forestEmojis = ["🌲","🌳"];
-
-// Stars (full world)
-const stars = [];
-for(let i=0;i<200;i++){
-  stars.push({
-    x:Math.random()*7000 - 2000, // from -2000 to 5000
-    y:Math.random()*300,
-    emoji:["⭐️","✨","🌟"][i%3]
+/* Forest (left of city) */
+const forest = [];
+for(let i=0;i<50;i++){
+  forest.push({
+    x: -i*180 - 200,
+    emoji: Math.random()<0.5 ? "🌲":"🌳",
+    yOffset: Math.random()*20
   });
 }
 
-// Clouds
-const clouds = [
-  {x:200,y:120},{x:600,y:160},{x:1000,y:100}
-];
-
-// Obstacles
+/* Obstacles */
 const obstacles = [];
 function spawnObstacle(x){
   obstacles.push({
-    x:x,
-    y:canvas.height-roadH-56,
-    emoji:"🚧"
+    x: x,
+    y: canvas.height - roadH - 56,
+    width: 56,
+    height: 56,
+    emoji: "🚧"
   });
 }
 spawnObstacle(800);
 spawnObstacle(1400);
 spawnObstacle(2000);
 
-/* LOOP */
+/* Stars */
+const stars = [];
+for(let i=0;i<200;i++){
+  stars.push({
+    x: Math.random()*10000 - 5000,
+    y: Math.random()*300,
+    emoji: ["⭐️","✨","🌟"][i%3]
+  });
+}
+
+/* Clouds */
+const clouds = [
+  {x:200,y:120},{x:600,y:160},{x:1000,y:100}
+];
+
+/* Moon */
+const moon = { x:100, y:80, emoji:"🌖" };
+
+/* GAME LOOP */
 function update(){
+  // Scroll
   if(left){
     scrollX -= 5;
     player.dir="left";
@@ -151,6 +167,7 @@ function update(){
     player.dir="right";
   }
 
+  // Jump
   if(jump && !player.jumping){
     player.vy = -18;
     player.jumping = true;
@@ -159,12 +176,24 @@ function update(){
   player.vy += 1;
   player.y += player.vy;
 
-  const groundY = canvas.height - roadH - 18;
+  const groundY = canvas.height - roadH - player.height;
   if(player.y > groundY){
     player.y = groundY;
     player.vy = 0;
     player.jumping = false;
   }
+
+  // Obstacle collision
+  obstacles.forEach(o=>{
+    if(player.x + player.width > o.x - scrollX &&
+       player.x < o.x - scrollX + o.width &&
+       player.y + player.height > o.y &&
+       player.y < o.y + o.height){
+      player.y = o.y - player.height;
+      player.vy = 0;
+      player.jumping = false;
+    }
+  });
 }
 
 function draw(){
@@ -174,15 +203,15 @@ function draw(){
   ctx.fillStyle="#020a2a";
   ctx.fillRect(0,0,canvas.width,canvas.height);
 
-  /* MOON */
-  ctx.font="64px sans-serif";
-  ctx.fillText("🌖", 50, 100);
-
   /* STARS */
   ctx.font="16px sans-serif";
   stars.forEach(s=>{
     ctx.fillText(s.emoji, s.x - scrollX*0.2, s.y);
   });
+
+  /* MOON */
+  ctx.font="48px sans-serif";
+  ctx.fillText(moon.emoji, moon.x, moon.y);
 
   /* CLOUDS */
   ctx.font="48px sans-serif";
@@ -192,55 +221,33 @@ function draw(){
 
   /* GRASS */
   ctx.fillStyle="#2f7d32";
-  ctx.fillRect(
-    0,
-    canvas.height-roadH-grassH,
-    canvas.width,
-    grassH
-  );
+  ctx.fillRect(0, canvas.height-roadH-grassH, canvas.width, grassH);
+
+  /* FOREST */
+  ctx.font="40px sans-serif";
+  forest.forEach(t=>{
+    ctx.fillText(t.emoji, t.x - scrollX*0.5, canvas.height-roadH-grassH+t.yOffset);
+  });
 
   /* CITY */
   ctx.font="180px sans-serif";
   buildings.forEach(b=>{
-    ctx.fillText(
-      b.emoji,
-      b.x - scrollX*0.5,
-      canvas.height-roadH-grassH+5
-    );
+    ctx.fillText(b.emoji, b.x - scrollX*0.5, canvas.height-roadH-grassH+b.yOffset);
   });
-
-  /* FOREST (left) */
-  ctx.font="140px sans-serif";
-  for(let i=0;i<50;i++){
-    const f = forestEmojis[i % 2];
-    const x = -i*200 - scrollX*0.5;
-    ctx.fillText(f, x, canvas.height-roadH-grassH+10);
-  }
 
   /* ROAD */
   ctx.fillStyle="#555";
-  ctx.fillRect(
-    0,
-    canvas.height-roadH,
-    canvas.width,
-    roadH
-  );
-
-  /* PLAYER (PNG) */
-  const img = player.dir === "right" ? runnerRight : runnerLeft;
-  ctx.drawImage(
-    img,
-    player.x,
-    player.y - 56,
-    56,
-    56
-  );
+  ctx.fillRect(0, canvas.height-roadH, canvas.width, roadH);
 
   /* OBSTACLES */
   ctx.font="56px sans-serif";
   obstacles.forEach(o=>{
     ctx.fillText(o.emoji, o.x - scrollX, o.y);
   });
+
+  /* PLAYER */
+  const img = player.dir==="right" ? runnerRight : runnerLeft;
+  ctx.drawImage(img, player.x, player.y, player.width, player.height);
 }
 
 function loop(){
