@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <title>Maximum Reality Space Adventures</title>
 <style>
-    body { margin:0; overflow:hidden; background:#222; font-family:sans-serif; }
+    body { margin:0; overflow:hidden; background:#87ceeb; font-family:sans-serif; }
     canvas { display:block; }
     .button { 
         position: fixed; 
@@ -36,11 +36,12 @@ const ctx = canvas.getContext("2d");
 const WIDTH = canvas.width;
 const HEIGHT = canvas.height;
 const ROAD_Y = HEIGHT - 80;
-const GRASS_HEIGHT = 320; // 4x the grey road height
+const GRASS_HEIGHT = 320; // tall green band
 
 let player = { x:WIDTH-100, y:ROAD_Y-64, w:64, h:64, vy:0, jumping:false };
 let mochkil = { x:WIDTH-150, y:ROAD_Y-64, w:64, h:64 };
 let foods = [];
+let decorations = [];
 
 let leftDown=false, rightDown=false, jumpDown=false;
 let scrollX=0;
@@ -52,6 +53,17 @@ document.getElementById('right').addEventListener('touchstart', ()=>rightDown=tr
 document.getElementById('right').addEventListener('touchend', ()=>rightDown=false);
 document.getElementById('jump').addEventListener('touchstart', ()=>jumpDown=true);
 document.getElementById('jump').addEventListener('touchend', ()=>jumpDown=false);
+
+// ---- Spawn decorations ----
+function spawnDecorations(){
+    const emojis = ['🌲','🌳','🏡','🏠'];
+    for(let i=0; i<50; i++){
+        let x = Math.random()*5000; // long world
+        let y = ROAD_Y - GRASS_HEIGHT - 50 - Math.random()*50; // above grass, above player
+        decorations.push({ x, y, emoji:emojis[Math.floor(Math.random()*emojis.length)] });
+    }
+}
+spawnDecorations();
 
 // ---- Game loop ----
 function gameLoop(){
@@ -101,9 +113,19 @@ function update(){
 function draw(){
     ctx.clearRect(0,0,WIDTH,HEIGHT);
 
-    // Grass band (tall green layer)
+    // Sky (rest of background above green)
+    ctx.fillStyle="#87ceeb";
+    ctx.fillRect(0,0,WIDTH, ROAD_Y - GRASS_HEIGHT);
+
+    // Grass band
     ctx.fillStyle="#2ecc71";
     ctx.fillRect(0, ROAD_Y - GRASS_HEIGHT + 80, WIDTH, GRASS_HEIGHT);
+
+    // Decorations above player
+    decorations.forEach(d=>{
+        ctx.font="48px sans-serif";
+        ctx.fillText(d.emoji, d.x - scrollX, d.y);
+    });
 
     // Grey road at bottom
     ctx.fillStyle="#666";
