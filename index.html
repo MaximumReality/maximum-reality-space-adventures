@@ -37,10 +37,11 @@ const WIDTH = canvas.width;
 const HEIGHT = canvas.height;
 
 const ROAD_Y = HEIGHT - 80;
-const GREEN_HEIGHT = 80; // shorter green band
+const GREEN_HEIGHT = 80; // green band
+const GREY_HEIGHT = 80;
 
-let player = { x:WIDTH-100, y:ROAD_Y-64, w:64, h:64, vy:0, jumping:false };
-let mochkil = { x:WIDTH-150, y:ROAD_Y-64, w:64, h:64 };
+let player = { x:WIDTH-100, y:ROAD_Y-GREY_HEIGHT, w:64, h:64, vy:0, jumping:false };
+let mochkil = { x:WIDTH-150, y:ROAD_Y-GREY_HEIGHT, w:64, h:64 };
 let foods = [];
 let decorations = [];
 
@@ -55,7 +56,10 @@ document.getElementById('right').addEventListener('touchend', ()=>rightDown=fals
 document.getElementById('jump').addEventListener('touchstart', ()=>jumpDown=true);
 document.getElementById('jump').addEventListener('touchend', ()=>jumpDown=false);
 
-const DECOR_EMOJIS = ['🌲','🌳','🏡','🏠'];
+// ---- Decorations ----
+const HOUSE_EMOJIS = ['🏡','🏠'];
+const TREE_EMOJIS = ['🌲','🌳'];
+const FLOWER_EMOJIS = ['🌻','🪻','🌷'];
 const FOOD_EMOJIS = ['🍕','🌮'];
 
 // ---- Clouds and Rainbow ----
@@ -64,16 +68,23 @@ const clouds = [
     {x:450, y:80},
     {x:650, y:40}
 ];
-// Rainbow bottom flush with green band
-const rainbow = {x:WIDTH-64, y:ROAD_Y - GREEN_HEIGHT + 48, emoji:"🌈"}; // flush right, stationary
+// Rainbow raised to top of green band
+const rainbow = {x:WIDTH-64, y:ROAD_Y-GREEN_HEIGHT-24, emoji:"🌈"}; 
 
 // ---- Pre-generate items ----
-for(let i=0; i<10; i++){
+for(let i=0;i<10;i++){
+    // Food
     let fx = player.x - i*80;
-    foods.push({ x:fx, y:ROAD_Y-48, emoji:FOOD_EMOJIS[Math.floor(Math.random()*FOOD_EMOJIS.length)], collected:false });
-    let dx = player.x - i*150 - 100;
-    let dy = ROAD_Y - GREEN_HEIGHT + 10 + Math.random()*(GREEN_HEIGHT - 20);
-    decorations.push({ x:dx, y:dy, emoji:DECOR_EMOJIS[Math.floor(Math.random()*DECOR_EMOJIS.length)] });
+    foods.push({ x:fx, y:ROAD_Y-GREY_HEIGHT, emoji:FOOD_EMOJIS[Math.floor(Math.random()*FOOD_EMOJIS.length)], collected:false });
+    
+    // Decorations
+    let dx = i*150 + 50;
+    let dy = ROAD_Y - GREEN_HEIGHT + 20; // top of green band for houses
+    let emoji;
+    if(i%3===0) emoji = HOUSE_EMOJIS[Math.floor(Math.random()*HOUSE_EMOJIS.length)];
+    else if(i%3===1) emoji = TREE_EMOJIS[Math.floor(Math.random()*TREE_EMOJIS.length)];
+    else emoji = FLOWER_EMOJIS[Math.floor(Math.random()*FLOWER_EMOJIS.length)];
+    decorations.push({x:dx, y:dy, emoji:emoji});
 }
 
 // ---- Game loop ----
@@ -85,109 +96,85 @@ function gameLoop(){
 
 // ---- Update positions ----
 function update(){
-    // Move player
     if(leftDown) player.x -=5;
     if(rightDown) player.x +=5;
     if(jumpDown && !player.jumping){ player.vy=-12; player.jumping=true; }
 
-    // Gravity
     player.vy += 0.6;
     player.y += player.vy;
 
     // Lock player and raccoon to top of grey road
-    if(player.y > ROAD_Y - player.h){ 
-        player.y = ROAD_Y - player.h; 
+    if(player.y > ROAD_Y-GREY_HEIGHT){ 
+        player.y = ROAD_Y-GREY_HEIGHT; 
         player.vy=0; 
         player.jumping=false; 
     }
-    mochkil.y = ROAD_Y - mochkil.h;
+    mochkil.y = ROAD_Y-GREY_HEIGHT;
 
     // Mochkil follows player
     let dx = player.x - mochkil.x;
-    mochkil.x += dx * 0.05;
+    mochkil.x += dx*0.05;
 
-    // Scroll world
     scrollX = player.x - (WIDTH-150);
 
-    // Spawn food dynamically ahead
+    // Spawn food dynamically
     if(Math.random()<0.02){
         let fx = player.x - WIDTH - Math.random()*400;
-        foods.push({ x:fx, y:ROAD_Y-48, emoji:FOOD_EMOJIS[Math.floor(Math.random()*FOOD_EMOJIS.length)], collected:false });
+        foods.push({x:fx, y:ROAD_Y-GREY_HEIGHT, emoji:FOOD_EMOJIS[Math.floor(Math.random()*FOOD_EMOJIS.length)], collected:false});
     }
-
-    // Spawn decorations dynamically ahead
-    if(Math.random()<0.03){
-        let dx = player.x - WIDTH - Math.random()*500;
-        let dy = ROAD_Y - GREEN_HEIGHT + 10 + Math.random()*(GREEN_HEIGHT - 20);
-        decorations.push({ x:dx, y:dy, emoji:DECOR_EMOJIS[Math.floor(Math.random()*DECOR_EMOJIS.length)] });
-    }
-
-    // Mochkil collects food
-    foods.forEach(f=>{
-        if(!f.collected && Math.abs(f.x - mochkil.x)<40){
-            f.collected=true;
-        }
-    });
-
-    // Remove old food/decorations far behind
-    foods = foods.filter(f=>f.x > player.x - WIDTH*2);
-    decorations = decorations.filter(d=>d.x > player.x - WIDTH*2);
-
-    // Keep foods on top of grey road
-    foods.forEach(f => { f.y = ROAD_Y - 48; });
 }
 
 // ---- Draw everything ----
 function draw(){
     ctx.clearRect(0,0,WIDTH,HEIGHT);
 
-    // ---- Sky ----
+    // Sky
     ctx.fillStyle="#87ceeb";
-    ctx.fillRect(0, 0, WIDTH, ROAD_Y - GREEN_HEIGHT);
+    ctx.fillRect(0,0,WIDTH,ROAD_Y-GREEN_HEIGHT);
 
-    // ---- Sun/cloud ⛅ ----
+    // Sun/cloud
     ctx.font="48px sans-serif";
-    ctx.fillText("⛅️", 20, 50);
+    ctx.fillText("⛅️",20,50);
 
-    // ---- Clouds ☁️ ----
+    // Clouds
     clouds.forEach(c=>{
-        ctx.fillText("☁️", c.x, c.y);
+        ctx.fillText("☁️",c.x,c.y);
     });
 
-    // ---- Rainbow 🌈 (stationary) ----
+    // Rainbow
     ctx.font="64px sans-serif";
-    ctx.fillText(rainbow.emoji, rainbow.x, rainbow.y);
+    ctx.fillText(rainbow.emoji,rainbow.x,rainbow.y);
 
-    // ---- Green grass ----
+    // Green band
     ctx.fillStyle="#2ecc71";
-    ctx.fillRect(0, ROAD_Y - GREEN_HEIGHT, WIDTH, GREEN_HEIGHT);
+    ctx.fillRect(0,ROAD_Y-GREEN_HEIGHT,WIDTH,GREEN_HEIGHT);
 
-    // ---- Decorations in green area ----
+    // Decorations (houses, trees, flowers)
     decorations.forEach(d=>{
-        if(d.x > scrollX - 100 && d.x < scrollX + WIDTH + 100){
+        if(d.x>scrollX-100 && d.x<scrollX+WIDTH+100){
             ctx.font="48px sans-serif";
-            ctx.fillText(d.emoji, d.x - scrollX, d.y);
+            ctx.fillText(d.emoji,d.x-scrollX,d.y);
         }
     });
 
-    // ---- Grey road ----
+    // Grey road
     ctx.fillStyle="#666";
-    ctx.fillRect(0, ROAD_Y, WIDTH, 80);
+    ctx.fillRect(0,ROAD_Y,WIDTH,GREY_HEIGHT);
 
-    // ---- Foods ----
+    // Food
     foods.forEach(f=>{
         if(!f.collected){
             ctx.font="48px sans-serif";
-            ctx.fillText(f.emoji, f.x - scrollX, f.y);
+            ctx.fillText(f.emoji,f.x-scrollX,f.y);
         }
     });
 
-    // ---- Player 🏃‍♀️ ----
+    // Player
     ctx.font="64px sans-serif";
-    ctx.fillText("🏃‍♀️", player.x - scrollX, player.y);
+    ctx.fillText("🏃‍♀️",player.x-scrollX,player.y);
 
-    // ---- Mochkil 🦝 ----
-    ctx.fillText("🦝", mochkil.x - scrollX, mochkil.y);
+    // Mochkil
+    ctx.fillText("🦝",mochkil.x-scrollX,mochkil.y);
 }
 
 gameLoop();
