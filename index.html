@@ -107,7 +107,23 @@ for(let i=0;i<80;i++){
     emoji:["🏢","🏬","🏭","🏨","🏦","🏥","🏠","🏡","🕌","⛪️","🏟️"][i%11]
   });
 }
+/* OBSTACLES */
+const obstacles = [];
 
+// Function to spawn an obstacle
+function spawnObstacle(x){
+  obstacles.push({
+    x: x,
+    y: canvas.height - roadH - 56, // aligns with top of road
+    emoji: "🚧"
+  });
+}
+
+// Example: spawn a few obstacles
+spawnObstacle(800);
+spawnObstacle(1400);
+spawnObstacle(2000);
+  
 const stars = [];
 for(let i=0;i<120;i++){
   stars.push({
@@ -206,7 +222,11 @@ function draw(){
     56
   );
 }
-
+// Draw obstacles
+ctx.font = "56px sans-serif";
+obstacles.forEach(o => {
+  ctx.fillText(o.emoji, o.x - scrollX, o.y);
+});
 function loop(){
   update();
   draw();
