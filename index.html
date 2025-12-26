@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <title>Maximum Reality Space Adventures</title>
 <style>
-body { margin:0; overflow:hidden; background:#222; font-family:sans-serif; }
+body { margin:0; overflow:hidden; background:#111; font-family:sans-serif; }
 canvas { display:block; }
 .button { 
     position: fixed; 
@@ -17,14 +17,12 @@ canvas { display:block; }
     z-index:1000;
 }
 #left { left:20px; bottom:20px; }
-#right { left:120px; bottom:20px; }
 #jump { right:20px; bottom:20px; }
 </style>
 </head>
 <body>
 
 <div id="left" class="button">◀</div>
-<div id="right" class="button">▶</div>
 <div id="jump" class="button">⬆</div>
 
 <canvas id="gameCanvas" width="800" height="600"></canvas>
@@ -37,70 +35,48 @@ const WIDTH = canvas.width;
 const HEIGHT = canvas.height;
 
 const ROAD_Y = HEIGHT - 80;
-const GREEN_HEIGHT = 80;
+const GREEN_HEIGHT = 100;
 const GREY_HEIGHT = 80;
 
-let player = { x:WIDTH-100, y:0, w:64, h:64, vy:0, jumping:false };
-let mochkil = { x:WIDTH-150, y:0, w:64, h:64 };
-let foods = [];
-let decorations = [];
-
-let leftDown=false, rightDown=false, jumpDown=false;
-let scrollX=0;
+let player = { x:WIDTH-150, y:0, w:64, h:64, vy:0, jumping:false };
+let scrollX = 0;
 
 // Buttons
+let leftDown=false, jumpDown=false;
 document.getElementById('left').addEventListener('touchstart', ()=>leftDown=true);
 document.getElementById('left').addEventListener('touchend', ()=>leftDown=false);
-document.getElementById('right').addEventListener('touchstart', ()=>rightDown=true);
-document.getElementById('right').addEventListener('touchend', ()=>rightDown=false);
 document.getElementById('jump').addEventListener('touchstart', ()=>jumpDown=true);
 document.getElementById('jump').addEventListener('touchend', ()=>jumpDown=false);
 
 // Decorations
-const HOUSE_EMOJIS = ['🏡','🏠'];
-const TREE_EMOJIS = ['🌲','🌳'];
-const FLOWER_EMOJIS = ['🌻','🪻','🌷'];
-const FOOD_EMOJIS = ['🍕','🌮'];
+const CITY = ['🏡','🏠','🏚️','⛪️','🏥','🏦','🏨','🏢','🏟️','🕍','🏗️','🕌','🏭','🏪','🏫','🏠','🏡'];
+let cityObjects = [];
+for(let i=0;i<50;i++){
+    cityObjects.push({
+        x: i*160,
+        y: ROAD_Y-GREEN_HEIGHT + 10 + Math.random()*30,
+        emoji: CITY[Math.floor(Math.random()*CITY.length)]
+    });
+}
 
-// Clouds and Rainbow
+// Clouds
 let clouds = [
     {x:200, y:50},
     {x:450, y:80},
     {x:650, y:40}
 ];
-const rainbow = {x:WIDTH+200, y:ROAD_Y-GREEN_HEIGHT-30, emoji:"🌈"}; // flush with green
 
-// Pre-generate items
-for(let i=0;i<10;i++){
-    // Food
-    let fx = player.x - i*120;
-    foods.push({ x:fx, y:ROAD_Y-GREY_HEIGHT-48, emoji:FOOD_EMOJIS[Math.floor(Math.random()*FOOD_EMOJIS.length)], collected:false });
-    
-    // Decorations (houses top green, trees/flowers scattered)
-    let dx = i*200 + 100;
-    let dy;
-    let emoji;
-    if(i%3===0){ 
-        emoji = HOUSE_EMOJIS[Math.floor(Math.random()*HOUSE_EMOJIS.length)];
-        dy = ROAD_Y - GREEN_HEIGHT + 10; // top green
-    } else if(i%3===1){
-        emoji = TREE_EMOJIS[Math.floor(Math.random()*TREE_EMOJIS.length)];
-        dy = ROAD_Y - GREEN_HEIGHT + 30 + Math.random()*30;
-    } else {
-        emoji = FLOWER_EMOJIS[Math.floor(Math.random()*FLOWER_EMOJIS.length)];
-        dy = ROAD_Y - GREEN_HEIGHT + 40 + Math.random()*30;
-    }
-    decorations.push({x:dx, y:dy, emoji:emoji});
+// Stars
+let stars = [];
+for(let i=0;i<100;i++){
+    stars.push({x:Math.random()*WIDTH, y:Math.random()*(ROAD_Y-GREEN_HEIGHT), size:1+Math.random()*2});
 }
 
-// Randomize cloud y-positions
-clouds.forEach(c=>{
-    c.y = 20 + Math.random()*(ROAD_Y - GREEN_HEIGHT - 50);
-});
+// Moon
+const moon = {x:50, y:80, emoji:'🌖'};
 
-// Set player and raccoon y to grey road
+// ---- Set player y on top of road ----
 player.y = ROAD_Y-GREY_HEIGHT-player.h/2;
-mochkil.y = ROAD_Y-GREY_HEIGHT-mochkil.h/2;
 
 // ---- Game loop ----
 function gameLoop(){
@@ -109,93 +85,73 @@ function gameLoop(){
     requestAnimationFrame(gameLoop);
 }
 
-// ---- Update positions ----
+// ---- Update ----
 function update(){
-    // Player moves right-to-left
-    if(leftDown) player.x +=5;   // player moves left-to-right on screen
-    if(rightDown) player.x -=5;  // player moves right-to-left
+    // Player moves left
+    if(leftDown) player.x -=5;
 
+    // Jumping
     if(jumpDown && !player.jumping){ player.vy=-12; player.jumping=true; }
-
     player.vy += 0.6;
     player.y += player.vy;
-
-    if(player.y > ROAD_Y-GREY_HEIGHT-player.h/2){ 
-        player.y = ROAD_Y-GREY_HEIGHT-player.h/2; 
-        player.vy=0; 
-        player.jumping=false; 
+    if(player.y > ROAD_Y-GREY_HEIGHT-player.h/2){
+        player.y = ROAD_Y-GREY_HEIGHT-player.h/2;
+        player.vy = 0;
+        player.jumping=false;
     }
-
-    mochkil.y = ROAD_Y-GREY_HEIGHT-mochkil.h/2;
-
-    // Mochkil follows player
-    let dx = player.x - mochkil.x;
-    mochkil.x += dx*0.05;
 
     scrollX = player.x - (WIDTH-150);
 
-    // Spawn food dynamically (behind player)
-    if(Math.random()<0.02){
-        let fx = player.x - WIDTH - Math.random()*400;
-        foods.push({x:fx, y:ROAD_Y-GREY_HEIGHT-48, emoji:FOOD_EMOJIS[Math.floor(Math.random()*FOOD_EMOJIS.length)], collected:false});
-    }
-
-    // Remove foods far ahead or behind
-    foods = foods.filter(f=>f.x > player.x - WIDTH*2);
+    // Move clouds slowly for parallax
+    clouds.forEach(c=>c.x += 1); // slower than player movement
+    clouds.forEach(c=>{
+        if(c.x - scrollX > WIDTH) c.x -= WIDTH+200;
+    });
 }
 
-// ---- Draw everything ----
+// ---- Draw ----
 function draw(){
     ctx.clearRect(0,0,WIDTH,HEIGHT);
 
     // Sky
-    ctx.fillStyle="#87ceeb";
+    ctx.fillStyle = "#0b1d51"; // dark blue
     ctx.fillRect(0,0,WIDTH,ROAD_Y-GREEN_HEIGHT);
 
-    // Sun/cloud
-    ctx.font="48px sans-serif";
-    ctx.fillText("⛅️",20,50);
-
-    // Clouds
-    clouds.forEach(c=>{
-        ctx.font="48px sans-serif";
-        ctx.fillText("☁️",c.x-scrollX,c.y);
+    // Stars
+    stars.forEach(s=>{
+        ctx.fillStyle = "#fff";
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.size, 0, Math.PI*2);
+        ctx.fill();
     });
 
-    // Rainbow scrolls with background
-    ctx.font="64px sans-serif";
-    ctx.fillText(rainbow.emoji,rainbow.x-scrollX,rainbow.y);
+    // Moon
+    ctx.font="48px sans-serif";
+    ctx.fillText(moon.emoji, moon.x, moon.y);
 
-    // Green band
+    // Clouds
+    ctx.font="48px sans-serif";
+    clouds.forEach(c=>{
+        ctx.fillText("☁️", c.x-scrollX, c.y);
+    });
+
+    // Green grass
     ctx.fillStyle="#2ecc71";
     ctx.fillRect(0,ROAD_Y-GREEN_HEIGHT,WIDTH,GREEN_HEIGHT);
 
-    // Decorations
-    decorations.forEach(d=>{
-        if(d.x>scrollX-100 && d.x<scrollX+WIDTH+100){
-            ctx.font="48px sans-serif";
-            ctx.fillText(d.emoji,d.x-scrollX,d.y);
-        }
+    // City objects
+    ctx.font="48px sans-serif";
+    cityObjects.forEach(obj=>{
+        ctx.fillText(obj.emoji, obj.x - scrollX, obj.y);
     });
 
     // Grey road
     ctx.fillStyle="#666";
     ctx.fillRect(0,ROAD_Y,WIDTH,GREY_HEIGHT);
 
-    // Food
-    foods.forEach(f=>{
-        if(!f.collected){
-            ctx.font="48px sans-serif";
-            ctx.fillText(f.emoji,f.x-scrollX,f.y);
-        }
-    });
-
     // Player
     ctx.font="64px sans-serif";
-    ctx.fillText("🏃‍♀️",player.x-scrollX,player.y);
-
-    // Mochkil
-    ctx.fillText("🦝",mochkil.x-scrollX,mochkil.y);
+    ctx.fillText("🏃‍♀️", player.x - scrollX, player.y);
 }
 
 gameLoop();
