@@ -68,11 +68,14 @@ function create() {
     this.physics.add.existing(mochkil);
     setupBody(mochkil, 0.3);
 
-    // Collisions
+    // ===== COLLISIONS =====
     this.physics.add.collider(player, platforms);
     this.physics.add.collider(mochkil, platforms);
     this.physics.add.collider(foods, platforms);
     this.physics.add.overlap(mochkil, foods, eatFood, null, this);
+
+    // Disable Mochkil blocking Azul
+    mochkil.body.checkCollision.none = true;
 
     // Camera
     this.cameras.main.startFollow(player);
@@ -98,23 +101,21 @@ function create() {
 function update() {
     idleTime += 0.05;
 
-    // Check space zones
+    // ===== SPACE ZONES =====
     let inSpace = false;
     spaceZones.forEach(zone => {
         if (player.x >= zone.start && player.x <= zone.end) inSpace = true;
     });
 
-    // Update gravity
     player.body.gravity.y = inSpace ? 300 : 900;
     mochkil.body.gravity.y = inSpace ? 300 : 900;
 
-    // Show popup only when first entering
     if (inSpace && !player.inSpace) {
         showScienceMessage(this, "In space, gravity is weaker!");
     }
     player.inSpace = inSpace;
 
-    // Player movement
+    // ===== PLAYER MOVEMENT =====
     if (leftDown) {
         player.body.setVelocityX(-220);
         player.scaleX = -1;
@@ -130,9 +131,15 @@ function update() {
         this.cameras.main.shake(120, 0.004);
     }
 
-    // Mochkil AI
+    // ===== MOCHKIL AI (smooth follow) =====
+    const followSpeed = 160;
     const dx = player.x - mochkil.x;
-    mochkil.body.setVelocityX(Math.abs(dx) > 60 ? Math.sign(dx) * 160 : 0);
+    mochkil.body.setVelocityX(Phaser.Math.Clamp(dx, -followSpeed, followSpeed));
+
+    // Keep Mochkil on platform visually
+    if (mochkil.body.blocked.down) {
+        mochkil.y = WORLD_HEIGHT - 60; // adjust based on platform Y
+    }
 
     // Idle bounce
     if (player.body.blocked.down) {
