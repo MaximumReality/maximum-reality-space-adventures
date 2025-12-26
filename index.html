@@ -2,15 +2,14 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Maximum Reality – Night Run</title>
+<title>Maximum Reality – Night Run Farm Abduction</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <style>
-html,body{
+html, body {
   margin:0;
   padding:0;
   overflow:hidden;
-  background:#000;
+  background:#020a2a;
   touch-action:none;
   font-family:sans-serif;
 }
@@ -36,10 +35,8 @@ button{
 }
 </style>
 </head>
-
 <body>
 <canvas id="game"></canvas>
-
 <div id="controls">
   <button id="left">⬅️</button>
   <button id="jump">⬆️</button>
@@ -57,103 +54,127 @@ function resize(){
 resize();
 window.addEventListener("resize", resize);
 
-/* LOAD PLAYER & COW IMAGES */
-const runnerRight = new Image();
-runnerRight.src = "IMG_2161.png";
-const runnerLeft = new Image();
-runnerLeft.src = "IMG_2162.png";
-const cowImg = new Image();
-cowImg.src = "cow.png"; // your cow PNG
-
-/* WORLD */
+/* WORLD LAYOUT */
 const roadH = 80;
 const grassH = 120;
 
 /* PLAYER */
-const player = { x: 200, y: 0, vy:0, jumping:false, dir:"right" };
+const player = {
+  x: 200,
+  y: canvas.height - roadH - 56,
+  vy:0,
+  jumping:false,
+  dir:"right"
+};
 
 /* SCROLL */
 let scrollX = 0;
 
 /* INPUT */
 let left=false, right=false, jump=false;
+
 function bind(btn, down, up){
   btn.addEventListener("touchstart", e=>{e.preventDefault(); down();});
   btn.addEventListener("touchend", e=>{e.preventDefault(); up();});
 }
+
 bind(document.getElementById("left"), ()=>left=true, ()=>left=false);
 bind(document.getElementById("right"), ()=>right=true, ()=>right=false);
 bind(document.getElementById("jump"), ()=>jump=true, ()=>jump=false);
 
-/* BUILDINGS */
+/* PLAYER IMAGES */
+const runnerRight = new Image();
+runnerRight.src = "IMG_2161.png";
+const runnerLeft = new Image();
+runnerLeft.src = "IMG_2162.png";
+
+/* BACKGROUND DECOR */
+const stars = [];
+for(let i=0;i<150;i++){
+  stars.push({
+    x:Math.random()*5000,
+    y:Math.random()*300,
+    emoji:["⭐️","✨","🌟"][i%3]
+  });
+}
+
+const clouds = [
+  {x:200,y:120},{x:600,y:160},{x:1000,y:100}
+];
+
 const buildings = [];
-for(let i=0;i<80;i++){
-  buildings.push({ x:i*200, emoji:["🏢","🏬","🏭","🏨","🏦","🏥","🏠","🏡","🕌","⛪️","🏟️"][i%11] });
+for(let i=0;i<20;i++){
+  buildings.push({
+    x: i*200,
+    emoji:["🏢","🏬","🏭","🏨","🏦","🏥","🏠","🏡","🕌","⛪️","🏟️"][i%11]
+  });
 }
 
-/* FOREST TREES LEFT OF CITY */
 const trees = [];
-for(let i=0;i<50;i++){
-  trees.push({ x:-i*200-200, emoji: Math.random()<0.5?"🌲":"🌳" });
-}
+for(let i=0;i<20;i++){
+  trees.push({
+    x: -500 - i*150,
+    emoji: i%2===0 ? "🌲":"🌳"
+  });
+});
 
-/* FARM OBJECTS LEFTMOST */
-const farmObjects = [
-  {emoji:"🚜", x:-2400, y:0, w:80, h:50},
-  {emoji:"🌾", x:-2350, y:0, w:40, h:40},
-  {emoji:"🌾", x:-2320, y:0, w:40, h:40},
-  {emoji:"🐓", x:-2300, y:0, w:30, h:30},
-  {emoji:"🐓", x:-2280, y:0, w:30, h:30},
-  {emoji:"🐑", x:-2250, y:0, w:50, h:50},
-  {emoji:"🐄", x:-2200, y:0, w:80, h:80}, // abducted cow
-  {emoji:"🐖", x:-2180, y:0, w:60, h:50},
-  {emoji:"🏠", x:-2150, y:0, w:100, h:100},
-  {emoji:"🐈", x:-2120, y:0, w:30, h:30}
+/* FARM SCENE */
+const farm = [
+  {emoji:"🚜", x:-800, y:canvas.height-roadH-grassH+60, scale:1},
+  {emoji:"🌾", x:-780, y:canvas.height-roadH-grassH+80, scale:0.5},
+  {emoji:"🌾", x:-750, y:canvas.height-roadH-grassH+85, scale:0.5},
+  {emoji:"🐓", x:-730, y:canvas.height-roadH-grassH+70, scale:0.5},
+  {emoji:"🐓", x:-710, y:canvas.height-roadH-grassH+75, scale:0.5},
+  {emoji:"🐑", x:-690, y:canvas.height-roadH-grassH+65, scale:0.8},
+  {emoji:"🐄", x:-650, y:canvas.height-roadH-grassH+50, scale:1.2}, // cow
+  {emoji:"🐖", x:-620, y:canvas.height-roadH-grassH+65, scale:0.8},
+  {emoji:"🐈", x:-600, y:canvas.height-roadH-grassH+60, scale:0.4},
+  {emoji:"🏠", x:-580, y:canvas.height-roadH-grassH+40, scale:1} // house
 ];
 
 /* UFO */
-const ufo = { x:-2200, y:-200, size:60, active:false, vx:2, vy:0 };
+let ufo = {
+  x: -650,
+  y: -100,
+  active: false,
+  scale:1,
+  speedY:2,
+  speedX:1
+};
 
-/* STARS */
-const stars = [];
-for(let i=0;i<150;i++){
-  stars.push({ x:Math.random()*10000-5000, y:Math.random()*300, emoji:["⭐️","✨","🌟"][i%3] });
-}
+let cowAbducted = false;
 
-/* CLOUDS */
-const clouds = [{x:200,y:120},{x:600,y:160},{x:1000,y:100}];
-
-/* MOON */
-const moon = {x:80, y:80, emoji:"🌖"};
-
-/* PLAYER & GRAVITY */
 function update(){
-  if(left){ scrollX -=5; player.dir="left"; }
-  if(right){ scrollX +=5; player.dir="right"; }
+  if(left){ scrollX -= 5; player.dir="left"; }
+  if(right){ scrollX += 5; player.dir="right"; }
 
-  if(jump && !player.jumping){ player.vy=-18; player.jumping=true; }
+  // simple jump
+  if(jump && !player.jumping){
+    player.vy=-18;
+    player.jumping=true;
+  }
   player.vy +=1;
-  player.y += player.vy;
-  const groundY = canvas.height - roadH - 18;
-  if(player.y > groundY){ player.y=groundY; player.vy=0; player.jumping=false; }
+  player.y +=player.vy;
+  const groundY = canvas.height-roadH-56;
+  if(player.y>groundY){ player.y=groundY; player.vy=0; player.jumping=false; }
 
-  // UFO & cow abduction
-  const cow = farmObjects.find(o=>o.emoji==="🐄");
-  if(!ufo.active && Math.random()<0.002){ ufo.active=true; ufo.y=-200; ufo.vx=2; }
+  // UFO abduction logic
+  const cow = farm.find(o=>o.emoji==="🐄");
+  if(!cowAbducted && Math.random()<0.003){ ufo.active=true; cowAbducted=true; }
+
   if(ufo.active){
-    ufo.x += ufo.vx;
-    ufo.y += Math.sin(Date.now()/300)*5-1; // swoop
-    if(cow && !cow.abducted){
-      const targetX = ufo.x;
-      const targetY = ufo.y + ufo.size/2;
-      cow.x += (targetX-cow.x)*0.05;
-      cow.y += (targetY-cow.y)*0.05;
-      if(Math.abs(cow.y-targetY)<2){ cow.abducted=true; }
+    if(ufo.y < cow.y - 60) ufo.y += ufo.speedY;
+    if(ufo.x < cow.x) ufo.x += ufo.speedX;
+    // lift cow
+    cow.y -= 2;
+    if(cow.y < ufo.y + 20){ 
+      // disappear
+      ufo.active=false;
+      cow.y = ufo.y; // hide cow with UFO
     }
   }
 }
 
-/* DRAW */
 function draw(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
 
@@ -163,19 +184,19 @@ function draw(){
 
   /* STARS */
   ctx.font="16px sans-serif";
-  stars.forEach(s=>ctx.fillText(s.emoji,s.x - scrollX*0.2,s.y));
+  stars.forEach(s=>{
+    ctx.fillText(s.emoji, s.x - scrollX*0.2, s.y);
+  });
 
   /* CLOUDS */
   ctx.font="48px sans-serif";
-  clouds.forEach(c=>ctx.fillText("☁️", c.x - scrollX*0.15, c.y));
-
-  /* MOON */
-  ctx.font="56px sans-serif";
-  ctx.fillText(moon.emoji, moon.x, moon.y);
+  clouds.forEach(c=>{
+    ctx.fillText("☁️", c.x - scrollX*0.15, c.y);
+  });
 
   /* GRASS */
   ctx.fillStyle="#2f7d32";
-  ctx.fillRect(0,canvas.height-roadH-grassH,canvas.width,grassH);
+  ctx.fillRect(0, canvas.height-roadH-grassH, canvas.width, grassH);
 
   /* BUILDINGS */
   ctx.font="180px sans-serif";
@@ -183,40 +204,34 @@ function draw(){
     ctx.fillText(b.emoji, b.x - scrollX*0.5, canvas.height-roadH-grassH+10);
   });
 
-  /* FOREST */
+  /* TREES (left side) */
   ctx.font="80px sans-serif";
   trees.forEach(t=>{
-    ctx.fillText(t.emoji, t.x - scrollX*0.5, canvas.height-roadH-grassH+10);
-  });
-
-  /* FARM */
-  farmObjects.forEach(f=>{
-    const y = canvas.height-roadH-grassH + f.h; // align bottom to grass
-    ctx.font=`${f.h}px sans-serif`;
-    if(f.emoji==="🐄" && f.abducted) return; // skip cow if fully abducted
-    ctx.fillText(f.emoji,f.x - scrollX,y);
+    ctx.fillText(t.emoji, t.x - scrollX*0.5, canvas.height-roadH-grassH+20);
   });
 
   /* ROAD */
   ctx.fillStyle="#555";
-  ctx.fillRect(0,canvas.height-roadH,canvas.width,roadH);
+  ctx.fillRect(0, canvas.height-roadH, canvas.width, roadH);
 
-  /* PLAYER */
-  const img = player.dir==="right"?runnerRight:runnerLeft;
-  ctx.drawImage(img,player.x,player.y-56,56,56);
+  /* FARM */
+  farm.forEach(f=>{
+    ctx.font=`${56*f.scale}px sans-serif`;
+    ctx.fillText(f.emoji, f.x - scrollX, f.y);
+  });
 
   /* UFO */
   if(ufo.active){
-    ctx.font=`${ufo.size}px sans-serif`;
+    ctx.font=`${60*ufo.scale}px sans-serif`;
     ctx.fillText("🛸", ufo.x - scrollX, ufo.y);
   }
+
+  /* PLAYER */
+  const img = player.dir==="right"? runnerRight:runnerLeft;
+  ctx.drawImage(img, player.x, player.y-56, 56,56);
 }
 
-function loop(){
-  update();
-  draw();
-  requestAnimationFrame(loop);
-}
+function loop(){ update(); draw(); requestAnimationFrame(loop);}
 loop();
 </script>
 </body>
