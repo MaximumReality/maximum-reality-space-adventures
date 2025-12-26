@@ -45,16 +45,22 @@ function create() {
     lastPlatformX = 400;
 
     // Player Azul
-    player = this.add.text(100, lastPlatformY - 64, '🐱', { fontSize: '64px', shadow: { offsetX:0, offsetY:0, color:'#00ffff', blur:12 }});
+    player = this.add.text(100, lastPlatformY - 64, '🐱', {
+        fontSize: '64px',
+        shadow: { offsetX:0, offsetY:0, color:'#00ffff', blur:12 }
+    });
     this.physics.add.existing(player);
     setupBody(player, 0.2);
     player.inSpace = false;
 
     // Mochkil
-    mochkil = this.add.text(30, lastPlatformY - 64, '🐈‍⬛', { fontSize: '64px', shadow: { offsetX:0, offsetY:0, color:'#ffffff', blur:10 }});
+    mochkil = this.add.text(30, lastPlatformY - 64, '🐈‍⬛', {
+        fontSize: '64px',
+        shadow: { offsetX:0, offsetY:0, color:'#ffffff', blur:10 }
+    });
     this.physics.add.existing(mochkil);
     setupBody(mochkil, 0.3);
-    mochkil.body.checkCollision.none = true;
+    mochkil.body.checkCollision.none = true; // prevent blocking Azul
 
     // Collisions
     this.physics.add.collider(player, platforms);
@@ -91,49 +97,55 @@ function update() {
     else player.body.setVelocityX(0);
     if(jumpDown && player.body.blocked.down){ player.body.setVelocityY(-450); this.cameras.main.shake(120,0.004); }
 
-    // Mochkil follow & jump
-    const followSpeed=160;
-    const dx=player.x-mochkil.x;
+    // Mochkil follow & auto-jump
+    const followSpeed = 160;
+    const dx = player.x - mochkil.x;
     mochkil.body.setVelocityX(Phaser.Math.Clamp(dx,-followSpeed,followSpeed));
-    // Auto-jump if next platform higher
+
+    // Auto-jump onto higher platforms
     if(mochkil.body.blocked.down){
+        let nextPlatform = null;
         platforms.children.iterate(p=>{
-            if(p.x>mochkil.x && p.x<mochkil.x+50 && mochkil.y>p.y-70){
-                mochkil.body.setVelocityY(-450);
-            }
+            if(p.x > mochkil.x && p.x < mochkil.x + 100) nextPlatform = p;
         });
+        if(nextPlatform && mochkil.y > nextPlatform.y - 70){
+            mochkil.body.setVelocityY(-450);
+        }
     }
 
     // Idle bounce
-    if(player.body.blocked.down){ player.y+=Math.sin(idleTime)*0.2; mochkil.y+=Math.sin(idleTime+1)*0.25; }
+    if(player.body.blocked.down){ player.y += Math.sin(idleTime)*0.2; mochkil.y += Math.sin(idleTime+1)*0.25; }
 
     // Spawn new platforms
-    if(player.x+600 > lastPlatformX){
-        const width=Phaser.Math.Between(200,400);
-        const maxDelta=20;
-        const newY=Phaser.Math.Clamp(lastPlatformY+Phaser.Math.Between(-maxDelta,maxDelta), WORLD_HEIGHT-80, WORLD_HEIGHT-40);
-        spawnPlatform(this,lastPlatformX,newY,width);
-        lastPlatformY=newY;
+    if(player.x + 600 > lastPlatformX){
+        const width = Phaser.Math.Between(200,400);
+        const gap = Phaser.Math.Between(50, 120); // small gap between platforms
+        const maxDelta = 20;
+        const newY = Phaser.Math.Clamp(lastPlatformY + Phaser.Math.Between(-maxDelta, maxDelta), WORLD_HEIGHT-80, WORLD_HEIGHT-40);
+        spawnPlatform(this, lastPlatformX + gap, newY, width);
+        lastPlatformX += width + gap;
+        lastPlatformY = newY;
 
         // Food spawn
         if(Phaser.Math.Between(0,1)){
-            const food=this.add.text(lastPlatformX+width/2,newY-48,Phaser.Math.RND.pick(['🍕','🌮']),{fontSize:'48px',shadow:{offsetX:0,offsetY:0,color:'#ffcc00',blur:10}});
+            const food = this.add.text(lastPlatformX - width/2, newY - 48, Phaser.Math.RND.pick(['🍕','🌮']), {
+                fontSize:'48px',
+                shadow:{offsetX:0,offsetY:0,color:'#ffcc00',blur:10}
+            });
             this.physics.add.existing(food);
             food.body.setBounce(0.7);
             foods.add(food);
         }
 
-        lastPlatformX += width;
-
-        // Clean old objects
-        platforms.children.iterate(p=>{ if(p.x+p.width/2<player.x-800) p.destroy(); });
-        foods.children.iterate(f=>{ if(f.x<player.x-800) f.destroy(); });
+        // Remove old objects
+        platforms.children.iterate(p=>{ if(p.x + p.width/2 < player.x - 800) p.destroy(); });
+        foods.children.iterate(f=>{ if(f.x < player.x - 800) f.destroy(); });
     }
 }
 
-// Helpers
+// --- Helpers ---
 function spawnPlatform(scene,x,y,width=200){
-    const platform=scene.add.rectangle(x+width/2,y,width,40,0x666666);
+    const platform = scene.add.rectangle(x + width/2, y, width, 40, 0x666666);
     scene.physics.add.existing(platform,true);
     platforms.add(platform);
 }
@@ -151,16 +163,25 @@ function setupBody(obj,bounce){
 }
 
 function createButton(scene,x,y,label,onDown,onUp){
-    const btn=scene.add.text(x,y,label,{ fontSize:'56px',backgroundColor:'#ffcc00',color:'#000',padding:{x:20,y:12},stroke:'#000',strokeThickness:6 })
-        .setScrollFactor(0)
-        .setDepth(1000)
-        .setInteractive();
-    btn.on('pointerdown',onDown);
-    btn.on('pointerup',onUp);
-    btn.on('pointerout',onUp);
+    const btn = scene.add.text(x,y,label,{
+        fontSize:'56px',
+        backgroundColor:'#ffcc00',
+        color:'#000',
+        padding:{x:20,y:12},
+        stroke:'#000',
+        strokeThickness:6
+    }).setScrollFactor(0).setDepth(1000).setInteractive();
+    btn.on('pointerdown', onDown);
+    btn.on('pointerup', onUp);
+    btn.on('pointerout', onUp);
 }
 
 function showScienceMessage(scene,text){
-    const msg=scene.add.text(scene.cameras.main.scrollX+400,100,text,{fontSize:'32px',fill:'#00ffff',backgroundColor:'#111',padding:10}).setScrollFactor(0);
+    const msg = scene.add.text(scene.cameras.main.scrollX+400,100,text,{
+        fontSize:'32px',
+        fill:'#00ffff',
+        backgroundColor:'#111',
+        padding:10
+    }).setScrollFactor(0);
     scene.tweens.add({targets:msg,alpha:0,duration:3000,ease:'Power1',onComplete:()=>msg.destroy()});
 }
