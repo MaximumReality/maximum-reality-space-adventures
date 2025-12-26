@@ -37,13 +37,22 @@ const WIDTH = canvas.width;
 const HEIGHT = canvas.height;
 
 const ROAD_Y = HEIGHT - 80;
-const GREEN_HEIGHT = 160; // doubled green height
-const SKY_HEIGHT = 80; // sky just above green
+const GREEN_HEIGHT = 160; // tall green band
+const SKY_HEIGHT = 80;    // sky just above green
 
-let player = { x:WIDTH-100, y:ROAD_Y-64, w:64, h:64, vy:0, jumping:false };
-let mochkil = { x:WIDTH-150, y:ROAD_Y-64, w:64, h:64 };
+let player = { x:WIDTH-100, y:ROAD_Y-64 + 20, w:64, h:64, vy:0, jumping:false }; // lower
+let mochkil = { x:WIDTH-150, y:ROAD_Y-64 + 20, w:64, h:64 }; // lower
 let foods = [];
 let decorations = [];
+
+// Pre-generate decorations along the scrollable world
+const WORLD_LENGTH = 5000;
+const EMOJIS = ['🌲','🌳','🏡','🏠'];
+for(let i=0; i<200; i++){
+    let x = Math.random()*WORLD_LENGTH;
+    let y = ROAD_Y - GREEN_HEIGHT + 20 + Math.random()*(GREEN_HEIGHT-40); // within green area
+    decorations.push({ x, y, emoji:EMOJIS[Math.floor(Math.random()*EMOJIS.length)] });
+}
 
 let leftDown=false, rightDown=false, jumpDown=false;
 let scrollX=0;
@@ -55,17 +64,6 @@ document.getElementById('right').addEventListener('touchstart', ()=>rightDown=tr
 document.getElementById('right').addEventListener('touchend', ()=>rightDown=false);
 document.getElementById('jump').addEventListener('touchstart', ()=>jumpDown=true);
 document.getElementById('jump').addEventListener('touchend', ()=>jumpDown=false);
-
-// ---- Spawn decorations in green area ----
-function spawnDecorations(){
-    const emojis = ['🌲','🌳','🏡','🏠'];
-    for(let i=0; i<50; i++){
-        let x = Math.random()*5000; // long world
-        let y = ROAD_Y - GREEN_HEIGHT + Math.random()*(GREEN_HEIGHT - 64); // inside green area
-        decorations.push({ x, y, emoji:emojis[Math.floor(Math.random()*emojis.length)] });
-    }
-}
-spawnDecorations();
 
 // ---- Game loop ----
 function gameLoop(){
@@ -84,12 +82,12 @@ function update(){
     // Gravity
     player.vy += 0.6;
     player.y += player.vy;
-    if(player.y > ROAD_Y-64){ player.y = ROAD_Y-64; player.vy=0; player.jumping=false; }
+    if(player.y > ROAD_Y-64 + 20){ player.y = ROAD_Y-64 + 20; player.vy=0; player.jumping=false; }
 
     // Mochkil follows player
     let dx = player.x - mochkil.x;
     mochkil.x += dx * 0.05;
-    mochkil.y = ROAD_Y-64;
+    mochkil.y = ROAD_Y-64 + 20;
 
     // Scroll world so player stays ~150px from right
     scrollX = player.x - (WIDTH-150);
@@ -97,7 +95,7 @@ function update(){
     // Spawn food
     if(Math.random()<0.02){
         let fx = player.x - WIDTH - Math.random()*400;
-        foods.push({ x:fx, y:ROAD_Y-64, emoji:Math.random()<0.5?'🍕':'🌮', collected:false });
+        foods.push({ x:fx, y:ROAD_Y-64 + 20, emoji:Math.random()<0.5?'🍕':'🌮', collected:false });
     }
 
     // Mochkil collects food
@@ -123,10 +121,12 @@ function draw(){
     ctx.fillStyle="#2ecc71";
     ctx.fillRect(0, ROAD_Y - GREEN_HEIGHT, WIDTH, GREEN_HEIGHT);
 
-    // Decorations in green area
+    // Decorations in green area (only render those in viewport)
     decorations.forEach(d=>{
-        ctx.font="48px sans-serif";
-        ctx.fillText(d.emoji, d.x - scrollX, d.y);
+        if(d.x > scrollX - 100 && d.x < scrollX + WIDTH + 100){
+            ctx.font="48px sans-serif";
+            ctx.fillText(d.emoji, d.x - scrollX, d.y);
+        }
     });
 
     // Grey road at bottom
