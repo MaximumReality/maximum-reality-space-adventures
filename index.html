@@ -2,9 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Maximum Reality – Night Run</title>
+<title>Maximum Reality – UFO Abduction</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <style>
 html,body{
   margin:0;
@@ -14,7 +13,9 @@ html,body{
   touch-action:none;
   font-family:sans-serif;
 }
-#game{ display:block; }
+#game{
+  display:block;
+}
 #controls{
   position:fixed;
   bottom:10px;
@@ -34,11 +35,8 @@ button{
 }
 </style>
 </head>
-
 <body>
-
 <canvas id="game"></canvas>
-
 <div id="controls">
   <button id="left">⬅️</button>
   <button id="jump">⬆️</button>
@@ -56,157 +54,164 @@ function resize(){
 resize();
 window.addEventListener("resize", resize);
 
-/* PLAYER IMAGES */
+/* LOAD PLAYER IMAGES */
 const runnerRight = new Image();
 runnerRight.src = "IMG_2161.png";
 const runnerLeft = new Image();
 runnerLeft.src = "IMG_2162.png";
 
-/* WORLD LAYOUT */
+/* WORLD */
 const roadH = 80;
 const grassH = 120;
 
 /* PLAYER */
-const player = { x: 200, y:0, vy:0, jumping:false, dir:"right" };
-let scrollX = 0;
-let left=false, right=false, jump=false;
+const player = {
+  x: canvas.width/2,
+  y: 0,
+  vy:0,
+  jumping:false,
+  dir:"right"
+};
 
+/* SCROLL */
+let scrollX = 0;
+
+/* INPUT */
+let left=false, right=false, jump=false;
 function bind(btn, down, up){
-  btn.addEventListener("touchstart", e=>{ e.preventDefault(); down(); });
-  btn.addEventListener("touchend", e=>{ e.preventDefault(); up(); });
+  btn.addEventListener("touchstart", e=>{e.preventDefault(); down();});
+  btn.addEventListener("touchend", e=>{e.preventDefault(); up();});
 }
 bind(document.getElementById("left"), ()=>left=true, ()=>left=false);
 bind(document.getElementById("right"), ()=>right=true, ()=>right=false);
 bind(document.getElementById("jump"), ()=>jump=true, ()=>jump=false);
 
-/* CITY BUILDINGS */
-const cityBuildings = [];
+/* BACKGROUND */
+const buildings = [];
 for(let i=0;i<20;i++){
-  cityBuildings.push({x:i*200, emoji:["🏢","🏬","🏭","🏨","🏦","🏥","🏠","🏡","🕌","⛪️","🏟️"][i%11]});
+  buildings.push({x:i*250, emoji:["🏢","🏬","🏭","🏨","🏦","🏥","🏠","🏡","🕌","⛪️","🏟️"][i%11]});
 }
-
-/* FOREST TREES */
 const forest = [];
-for(let i=0;i<25;i++){
-  forest.push({x:4200+i*160, emoji: i%2===0?"🌲":"🌳", size: 80 + Math.random()*40});
+for(let i=0;i<20;i++){
+  forest.push({x:2500 + i*120, emoji:["🌲","🌳"][i%2]});
 }
 
-/* FARM OBJECTS */
-const farmObjects = [
-  {x:5600, emoji:"🏠", w:120},
-  {x:5650, emoji:"🌾", w:20},
-  {x:5700, emoji:"🌾", w:20},
-  {x:5750, emoji:"🐓", w:25},
-  {x:5780, emoji:"🐓", w:25},
-  {x:5820, emoji:"🐑", w:35},
-  {x:5850, emoji:"🐖", w:40},
-  {x:5900, emoji:"🐄", w:60, abducted:false},
-  {x:5950, emoji:"🚜", w:60},
-  {x:5980, emoji:"🐈", w:20}
+/* FARM SCENE */
+const farm = [
+  {x:2700, emoji:"🏠", width:100, y:canvas.height-roadH-grassH+10},
+  {x:2800, emoji:"🐄", width:60, y:canvas.height-roadH-56, abducted:false},
+  {x:2850, emoji:"🐑", width:40, y:canvas.height-roadH-56},
+  {x:2900, emoji:"🐖", width:35, y:canvas.height-roadH-56},
+  {x:2950, emoji:"🐓", width:25, y:canvas.height-roadH-56},
+  {x:3000, emoji:"🐈", width:20, y:canvas.height-roadH-56},
+  {x:3050, emoji:"🌾", width:15, y:canvas.height-roadH-56},
+  {x:2750, emoji:"🚜", width:60, y:canvas.height-roadH-56}
 ];
 
 /* STARS */
-const stars=[];
-for(let i=0;i<120;i++){
-  stars.push({x:i*100, y:Math.random()*300, emoji:["⭐️","✨","🌟"][i%3]});
+const stars = [];
+for(let i=0;i<150;i++){
+  stars.push({x:Math.random()*5000, y:Math.random()*300, emoji:["⭐️","✨","🌟"][i%3]});
 }
 
 /* CLOUDS */
-const clouds=[{x:200,y:120},{x:600,y:160},{x:1000,y:100}];
+const clouds = [{x:200,y:120},{x:600,y:160},{x:1000,y:100}];
 
 /* MOON */
-const moon={x:80,y:80,emoji:"🌖"};
+const moon = {x:100, y:80, emoji:"🌖"};
 
 /* UFO */
-const ufo={x:5900,y:-100,size:60,scale:0.5,active:false, targetCow:null};
+const ufo = {x:0, y:0, size:60, active:false, step:0};
 
-/* LOOP LOGIC */
+/* LOOP UPDATE */
 function update(){
-  if(left){ scrollX -=5; player.dir="left"; }
-  if(right){ scrollX +=5; player.dir="right"; }
+  if(left){scrollX-=5; player.dir="left";}
+  if(right){scrollX+=5; player.dir="right";}
+  if(jump && !player.jumping){player.vy=-18; player.jumping=true;}
 
-  if(jump && !player.jumping){ player.vy=-18; player.jumping=true; }
+  player.vy+=1;
+  player.y+=player.vy;
 
-  player.vy += 1;
-  player.y += player.vy;
-  const groundY = canvas.height - roadH - 18;
-  if(player.y>groundY){ player.y=groundY; player.vy=0; player.jumping=false; }
+  const groundY = canvas.height-roadH-18;
+  if(player.y>groundY){player.y=groundY; player.vy=0; player.jumping=false;}
 
-  // UFO logic: target the cow
-  const cow = farmObjects.find(o=>o.emoji==="🐄");
-  if(!ufo.active && scrollX+player.x>5800){ 
-    ufo.active=true; 
-    ufo.y=-100; 
-    ufo.scale=0.5; 
-    ufo.targetCow=cow; 
-    cow.abducted=false; 
-    cow.y=canvas.height-roadH-60;
+  /* UFO Abduction */
+  const cow = farm.find(f=>f.emoji==="🐄");
+  if(!ufo.active && !cow.abducted && Math.random()<0.002){
+    ufo.active=true; ufo.step=0; ufo.x=cow.x; ufo.y=cow.y-300; ufo.size=30;
   }
-  if(ufo.active && ufo.targetCow){
-    const c = ufo.targetCow;
-    // UFO swoops
-    if(ufo.y<c.y-50) ufo.y+=4, ufo.scale+=0.01;
-    // Cow rises
-    if(!c.abducted && c.y>ufo.y+10) c.y-=4;
-    // Cow disappears into UFO
-    if(c.y<=ufo.y+10){ c.abducted=true; c.y=-500; ufo.y=-100; ufo.scale=0.5; ufo.active=false; ufo.targetCow=null; }
+  if(ufo.active){
+    ufo.step+=1;
+    ufo.y += 2 + Math.sin(ufo.step/10)*5;
+    ufo.size += 0.2; // getting closer
+    if(ufo.y>=cow.y-30){
+      cow.abducted=true;
+      ufo.active=false;
+    }
   }
+  if(cow.abducted) cow.y = ufo.y;
 }
 
+/* LOOP DRAW */
 function draw(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
 
-  // SKY
+  /* SKY */
   ctx.fillStyle="#020a2a";
   ctx.fillRect(0,0,canvas.width,canvas.height);
 
-  // STARS
+  /* STARS */
   ctx.font="16px sans-serif";
   stars.forEach(s=>ctx.fillText(s.emoji, s.x - scrollX*0.2, s.y));
 
-  // CLOUDS
+  /* CLOUDS */
   ctx.font="48px sans-serif";
   clouds.forEach(c=>ctx.fillText("☁️", c.x - scrollX*0.15, c.y));
 
-  // GRASS
-  ctx.fillStyle="#2f7d32";
-  ctx.fillRect(0, canvas.height-roadH-grassH, canvas.width, grassH);
-
-  // CITY
-  ctx.font="120px sans-serif";
-  cityBuildings.forEach(b=>ctx.fillText(b.emoji, b.x - scrollX, canvas.height-roadH-grassH+10));
-
-  // FOREST
-  forest.forEach(t=>{
-    ctx.font=`${t.size}px sans-serif`;
-    ctx.fillText(t.emoji, t.x - scrollX, canvas.height-roadH-grassH+10);
-  });
-
-  // FARM
-  farmObjects.forEach(f=>{
-    ctx.font=`${f.w}px sans-serif`;
-    if(!f.abducted) ctx.fillText(f.emoji, f.x - scrollX, canvas.height-roadH-grassH+10);
-  });
-
-  // ROAD
-  ctx.fillStyle="#555";
-  ctx.fillRect(0, canvas.height-roadH, canvas.width, roadH);
-
-  // MOON
-  ctx.font="48px sans-serif";
+  /* MOON */
+  ctx.font="50px sans-serif";
   ctx.fillText(moon.emoji, moon.x, moon.y);
 
-  // PLAYER
-  const img = player.dir==="right"? runnerRight: runnerLeft;
-  ctx.drawImage(img, player.x, player.y-56, 56, 56);
+  /* GRASS */
+  ctx.fillStyle="#2f7d32";
+  ctx.fillRect(0,canvas.height-roadH-grassH,canvas.width,grassH);
 
-  // UFO
-  if(ufo.active){ ctx.font=`${ufo.size*ufo.scale}px sans-serif`; ctx.fillText("🛸", ufo.x - scrollX, ufo.y); }
+  /* CITY */
+  ctx.font="120px sans-serif";
+  buildings.forEach(b=>{
+    ctx.fillText(b.emoji, b.x - scrollX*0.5, canvas.height-roadH-grassH+10);
+  });
+
+  /* FOREST */
+  ctx.font="80px sans-serif";
+  forest.forEach(t=>{
+    ctx.fillText(t.emoji, t.x - scrollX*0.5, canvas.height-roadH-grassH+50);
+  });
+
+  /* FARM */
+  farm.forEach(f=>{
+    if(f.emoji==="🐄" && f.abducted) return; // cow disappears when abducted
+    ctx.font=f.width+"px sans-serif";
+    ctx.fillText(f.emoji, f.x - scrollX, f.y);
+  });
+
+  /* ROAD */
+  ctx.fillStyle="#555";
+  ctx.fillRect(0,canvas.height-roadH,canvas.width,roadH);
+
+  /* PLAYER */
+  const img = player.dir==="right"?runnerRight:runnerLeft;
+  ctx.drawImage(img, player.x, player.y-56, 56,56);
+
+  /* UFO */
+  if(ufo.active){
+    ctx.font=ufo.size+"px sans-serif";
+    ctx.fillText("🛸", ufo.x - scrollX, ufo.y);
+  }
 }
 
-function loop(){ update(); draw(); requestAnimationFrame(loop); }
+function loop(){update(); draw(); requestAnimationFrame(loop);}
 loop();
 </script>
-
 </body>
 </html>
