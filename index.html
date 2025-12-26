@@ -4,21 +4,21 @@
 <meta charset="UTF-8">
 <title>Maximum Reality Space Adventures</title>
 <style>
-    body { margin:0; overflow:hidden; background:#222; font-family:sans-serif; }
-    canvas { display:block; }
-    .button { 
-        position: fixed; 
-        font-size: 48px; 
-        background:#ffcc00; 
-        color:#000; 
-        padding: 12px 20px; 
-        border-radius:8px; 
-        user-select:none; 
-        z-index:1000;
-    }
-    #left { left:20px; bottom:20px; }
-    #right { left:120px; bottom:20px; }
-    #jump { right:20px; bottom:20px; }
+body { margin:0; overflow:hidden; background:#222; font-family:sans-serif; }
+canvas { display:block; }
+.button { 
+    position: fixed; 
+    font-size: 48px; 
+    background:#ffcc00; 
+    color:#000; 
+    padding: 12px 20px; 
+    border-radius:8px; 
+    user-select:none; 
+    z-index:1000;
+}
+#left { left:20px; bottom:20px; }
+#right { left:120px; bottom:20px; }
+#jump { right:20px; bottom:20px; }
 </style>
 </head>
 <body>
@@ -36,19 +36,19 @@ const ctx = canvas.getContext("2d");
 const WIDTH = canvas.width;
 const HEIGHT = canvas.height;
 
-const ROAD_Y = HEIGHT - 80;       // bottom of grey road
+const ROAD_Y = HEIGHT - 80;
 const GREEN_HEIGHT = 80;
 const GREY_HEIGHT = 80;
 
-let player = { x:WIDTH-100, y:ROAD_Y-GREY_HEIGHT, w:64, h:64, vy:0, jumping:false };
-let mochkil = { x:WIDTH-150, y:ROAD_Y-GREY_HEIGHT, w:64, h:64 };
+let player = { x:WIDTH-100, y:0, w:64, h:64, vy:0, jumping:false };
+let mochkil = { x:WIDTH-150, y:0, w:64, h:64 };
 let foods = [];
 let decorations = [];
 
 let leftDown=false, rightDown=false, jumpDown=false;
 let scrollX=0;
 
-// ---- Buttons ----
+// Buttons
 document.getElementById('left').addEventListener('touchstart', ()=>leftDown=true);
 document.getElementById('left').addEventListener('touchend', ()=>leftDown=false);
 document.getElementById('right').addEventListener('touchstart', ()=>rightDown=true);
@@ -56,34 +56,33 @@ document.getElementById('right').addEventListener('touchend', ()=>rightDown=fals
 document.getElementById('jump').addEventListener('touchstart', ()=>jumpDown=true);
 document.getElementById('jump').addEventListener('touchend', ()=>jumpDown=false);
 
-// ---- Decorations ----
+// Decorations
 const HOUSE_EMOJIS = ['🏡','🏠'];
 const TREE_EMOJIS = ['🌲','🌳'];
 const FLOWER_EMOJIS = ['🌻','🪻','🌷'];
 const FOOD_EMOJIS = ['🍕','🌮'];
 
-// ---- Clouds and Rainbow ----
+// Clouds and Rainbow
 let clouds = [
     {x:200, y:50},
     {x:450, y:80},
     {x:650, y:40}
 ];
-// Rainbow flush with top of green
-const rainbow = {x:WIDTH-64, y:ROAD_Y-GREEN_HEIGHT, emoji:"🌈"}; 
+const rainbow = {x:WIDTH+200, y:ROAD_Y-GREEN_HEIGHT-30, emoji:"🌈"}; // flush with green
 
 // Pre-generate items
 for(let i=0;i<10;i++){
     // Food
-    let fx = player.x - i*80;
-    foods.push({ x:fx, y:ROAD_Y-GREY_HEIGHT, emoji:FOOD_EMOJIS[Math.floor(Math.random()*FOOD_EMOJIS.length)], collected:false });
+    let fx = player.x - i*120;
+    foods.push({ x:fx, y:ROAD_Y-GREY_HEIGHT-48, emoji:FOOD_EMOJIS[Math.floor(Math.random()*FOOD_EMOJIS.length)], collected:false });
     
-    // Decorations (houses at top of green, trees/flowers scattered)
-    let dx = i*150 + 50;
+    // Decorations (houses top green, trees/flowers scattered)
+    let dx = i*200 + 100;
     let dy;
     let emoji;
     if(i%3===0){ 
         emoji = HOUSE_EMOJIS[Math.floor(Math.random()*HOUSE_EMOJIS.length)];
-        dy = ROAD_Y - GREEN_HEIGHT + 10; // top of green
+        dy = ROAD_Y - GREEN_HEIGHT + 10; // top green
     } else if(i%3===1){
         emoji = TREE_EMOJIS[Math.floor(Math.random()*TREE_EMOJIS.length)];
         dy = ROAD_Y - GREEN_HEIGHT + 30 + Math.random()*30;
@@ -94,10 +93,14 @@ for(let i=0;i<10;i++){
     decorations.push({x:dx, y:dy, emoji:emoji});
 }
 
-// Randomize cloud y-positions within sky area
+// Randomize cloud y-positions
 clouds.forEach(c=>{
     c.y = 20 + Math.random()*(ROAD_Y - GREEN_HEIGHT - 50);
 });
+
+// Set player and raccoon y to grey road
+player.y = ROAD_Y-GREY_HEIGHT-player.h/2;
+mochkil.y = ROAD_Y-GREY_HEIGHT-mochkil.h/2;
 
 // ---- Game loop ----
 function gameLoop(){
@@ -108,20 +111,22 @@ function gameLoop(){
 
 // ---- Update positions ----
 function update(){
-    if(leftDown) player.x -=5;
-    if(rightDown) player.x +=5;
+    // Player moves right-to-left
+    if(leftDown) player.x +=5;   // player moves left-to-right on screen
+    if(rightDown) player.x -=5;  // player moves right-to-left
+
     if(jumpDown && !player.jumping){ player.vy=-12; player.jumping=true; }
 
     player.vy += 0.6;
     player.y += player.vy;
 
-    // Lock player and raccoon to top of grey road
-    if(player.y > ROAD_Y-GREY_HEIGHT){ 
-        player.y = ROAD_Y-GREY_HEIGHT; 
+    if(player.y > ROAD_Y-GREY_HEIGHT-player.h/2){ 
+        player.y = ROAD_Y-GREY_HEIGHT-player.h/2; 
         player.vy=0; 
         player.jumping=false; 
     }
-    mochkil.y = ROAD_Y-GREY_HEIGHT;
+
+    mochkil.y = ROAD_Y-GREY_HEIGHT-mochkil.h/2;
 
     // Mochkil follows player
     let dx = player.x - mochkil.x;
@@ -129,13 +134,13 @@ function update(){
 
     scrollX = player.x - (WIDTH-150);
 
-    // Spawn food dynamically
+    // Spawn food dynamically (behind player)
     if(Math.random()<0.02){
         let fx = player.x - WIDTH - Math.random()*400;
-        foods.push({x:fx, y:ROAD_Y-GREY_HEIGHT, emoji:FOOD_EMOJIS[Math.floor(Math.random()*FOOD_EMOJIS.length)], collected:false});
+        foods.push({x:fx, y:ROAD_Y-GREY_HEIGHT-48, emoji:FOOD_EMOJIS[Math.floor(Math.random()*FOOD_EMOJIS.length)], collected:false});
     }
 
-    // Remove foods far behind
+    // Remove foods far ahead or behind
     foods = foods.filter(f=>f.x > player.x - WIDTH*2);
 }
 
@@ -157,7 +162,7 @@ function draw(){
         ctx.fillText("☁️",c.x-scrollX,c.y);
     });
 
-    // Rainbow
+    // Rainbow scrolls with background
     ctx.font="64px sans-serif";
     ctx.fillText(rainbow.emoji,rainbow.x-scrollX,rainbow.y);
 
