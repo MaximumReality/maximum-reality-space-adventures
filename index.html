@@ -64,7 +64,8 @@ const clouds = [
     {x:450, y:80},
     {x:650, y:40}
 ];
-const rainbow = {x:WIDTH-64, y:ROAD_Y - GREEN_HEIGHT + 32, emoji:"🌈"}; // flush right, stationary
+// Rainbow raised so bottom touches top of green band
+const rainbow = {x:WIDTH-64, y:ROAD_Y - GREEN_HEIGHT + 64, emoji:"🌈"}; // flush right, stationary
 
 // ---- Pre-generate some items for starting screen ----
 for(let i=0; i<10; i++){
