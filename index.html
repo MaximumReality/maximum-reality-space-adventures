@@ -17,12 +17,14 @@ canvas { display:block; }
     z-index:1000;
 }
 #left { left:20px; bottom:20px; }
+#right { left:120px; bottom:20px; }
 #jump { right:20px; bottom:20px; }
 </style>
 </head>
 <body>
 
 <div id="left" class="button">◀</div>
+<div id="right" class="button">▶</div>
 <div id="jump" class="button">⬆</div>
 
 <canvas id="gameCanvas" width="800" height="600"></canvas>
@@ -38,13 +40,15 @@ const ROAD_Y = HEIGHT - 80;       // Bottom of road
 const GREEN_HEIGHT = 100;
 const GREY_HEIGHT = 80;
 
-let player = { x:WIDTH-150, y:0, w:64, h:64, vy:0, jumping:false };
+let player = { x:150, y:0, w:64, h:64, vy:0, jumping:false };
 let scrollX = 0;
 
 // Buttons
-let leftDown=false, jumpDown=false;
+let leftDown=false, rightDown=false, jumpDown=false;
 document.getElementById('left').addEventListener('touchstart', ()=>leftDown=true);
 document.getElementById('left').addEventListener('touchend', ()=>leftDown=false);
+document.getElementById('right').addEventListener('touchstart', ()=>rightDown=true);
+document.getElementById('right').addEventListener('touchend', ()=>rightDown=false);
 document.getElementById('jump').addEventListener('touchstart', ()=>jumpDown=true);
 document.getElementById('jump').addEventListener('touchend', ()=>jumpDown=false);
 
@@ -75,7 +79,7 @@ for(let i=0;i<100;i++){
 // Moon
 const moon = {x:50, y:80, emoji:'🌖'};
 
-// ---- Set player y on top of road ----
+// ---- Set player y on top of grey road ----
 player.y = ROAD_Y-GREY_HEIGHT-player.h/2;
 
 // ---- Game loop ----
@@ -87,8 +91,9 @@ function gameLoop(){
 
 // ---- Update ----
 function update(){
-    // Player moves left (screen scrolls right)
+    // Player moves
     if(leftDown) player.x -=5;
+    if(rightDown) player.x +=5;
 
     // Jumping
     if(jumpDown && !player.jumping){ player.vy=-12; player.jumping=true; }
@@ -100,18 +105,21 @@ function update(){
         player.jumping=false;
     }
 
-    scrollX = player.x - (WIDTH-150);
+    // Scroll so player stays near left
+    scrollX = player.x - 150;
 
-    // Clouds parallax (slower)
+    // Clouds parallax
     clouds.forEach(c=>{
-        c.x += 0.5; // slower than foreground
+        c.x += 0.5;
         if(c.x - scrollX > WIDTH) c.x -= WIDTH + 200;
+        if(c.x - scrollX < -100) c.x += WIDTH + 200;
     });
 
-    // Stars parallax (slowest)
+    // Stars parallax
     stars.forEach(s=>{
         s.x += 0.2;
         if(s.x - scrollX > WIDTH) s.x -= WIDTH*3;
+        if(s.x - scrollX < -100) s.x += WIDTH*3;
     });
 }
 
@@ -157,7 +165,7 @@ function draw(){
 
     // Player
     ctx.font="64px sans-serif";
-    ctx.fillText("🏃‍♀️", player.x - scrollX, player.y);
+    ctx.fillText("🏃🏼‍♀️", player.x - scrollX, player.y);
 }
 
 gameLoop();
