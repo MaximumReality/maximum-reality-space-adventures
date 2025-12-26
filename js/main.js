@@ -1,4 +1,5 @@
 const CONTROL_BAR_HEIGHT = 140;
+const WORLD_WIDTH = 2000;
 
 const config = {
     type: Phaser.AUTO,
@@ -33,11 +34,14 @@ function preload() {}
 function create() {
     const WORLD_HEIGHT = config.height - CONTROL_BAR_HEIGHT;
 
+    // ✅ FIX: SET PHYSICS WORLD SIZE
+    this.physics.world.setBounds(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
+
     // ===== GROUND =====
     ground = this.add.rectangle(
-        1000,
+        WORLD_WIDTH / 2,
         WORLD_HEIGHT - 20,
-        2000,
+        WORLD_WIDTH,
         40,
         0x666666
     );
@@ -63,7 +67,7 @@ function create() {
     foods = this.physics.add.group();
 
     ['🍕', '🌮'].forEach((emoji, i) => {
-        const food = this.add.text(400 + i * 200, 0, emoji, {
+        const food = this.add.text(400 + i * 300, 0, emoji, {
             fontSize: '48px',
             shadow: { offsetX: 0, offsetY: 0, color: '#ffcc00', blur: 10 }
         });
@@ -80,7 +84,7 @@ function create() {
 
     // ===== CAMERA =====
     this.cameras.main.startFollow(player);
-    this.cameras.main.setBounds(0, 0, 2000, WORLD_HEIGHT);
+    this.cameras.main.setBounds(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
 
     // ===== UI BAR =====
     this.add.rectangle(
@@ -101,7 +105,7 @@ function create() {
     createButton(this, config.width - 120, buttonY, '⬆', () => jumpDown = true, () => jumpDown = false);
 }
 
-function update(time) {
+function update() {
     idleTime += 0.05;
 
     // ===== PLAYER MOVE =====
@@ -132,7 +136,6 @@ function update(time) {
 }
 
 function eatFood(mochkil, food) {
-    // Pop animation
     this.tweens.add({
         targets: food,
         scale: 2,
@@ -141,7 +144,6 @@ function eatFood(mochkil, food) {
         onComplete: () => food.destroy()
     });
 
-    // Mochkil reaction
     this.tweens.add({
         targets: mochkil,
         scaleX: 1.3,
