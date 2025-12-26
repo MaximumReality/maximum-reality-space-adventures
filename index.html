@@ -125,19 +125,24 @@ function update(){
   if(player.y>groundY-56){player.y=groundY-56; player.vy=0; player.jumping=false;}
 
   /* UFO abduction */
-  const cow=farm.find(f=>f.emoji==="🐄");
-  if(!ufo.active && !cow.abducted && Math.random()<0.002){
-    ufo.active=true; ufo.step=0; ufo.y=cow.y-200;
-  }
-  if(ufo.active){
-    ufo.step+=1;
-    // swoop motion
-    ufo.y = cow.y-200 - Math.sin(ufo.step/20)*30;
-    cow.y -= 1.5; // rise cow
-    if(cow.y < ufo.y+20){ cow.abducted=true; ufo.active=false; }
-  }
-  if(cow.abducted) cow.y = ufo.y;
+const cow = farm.find(f => f.emoji === "🐄");
+if (!cow.abducted && !ufo.active && ufo.step === 0) {
+  // start UFO immediately
+  ufo.active = true;
+  ufo.step = 0;
+  ufo.y = cow.y - 200;
 }
+if (ufo.active) {
+  ufo.step += 1;
+  // swoop motion
+  ufo.y = cow.y - 200 - Math.sin(ufo.step / 20) * 30;
+  cow.y -= 1.5; // cow rises
+  if (cow.y < ufo.y + 20) {
+    cow.abducted = true;
+    ufo.active = false;
+  }
+}
+if (cow.abducted) cow.y = ufo.y;}
 
 function draw(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
