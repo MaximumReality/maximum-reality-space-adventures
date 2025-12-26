@@ -21,10 +21,9 @@ const game = new Phaser.Game(config);
 let player, mochkil, cursors, platforms;
 
 function preload() {
-    // Load sprites (placeholder graphics)
     this.load.image('tiles', 'assets/sprites/tileset.png');
-    this.load.spritesheet('azul', 'assets/sprites/azul.png', { frameWidth: 32, frameHeight: 32 });
-    this.load.spritesheet('mochkil', 'assets/sprites/mochkil_tuxedo.png', { frameWidth: 32, frameHeight: 32 });
+    this.load.image('azul', 'assets/sprites/azul.png');
+    this.load.image('mochkil', 'assets/sprites/mochkil_tuxedo.png');
 }
 
 function create() {
@@ -36,6 +35,7 @@ function create() {
 
     // Player (Azul)
     player = this.physics.add.sprite(100, 450, 'azul');
+    player.setScale(0.5);
     player.setBounce(0.2);
     player.setCollideWorldBounds(true);
     
@@ -43,6 +43,7 @@ function create() {
 
     // Mochkil (tuxedo kitten)
     mochkil = this.physics.add.sprite(50, 450, 'mochkil');
+    mochkil.setScale(0.5);
     mochkil.setBounce(0.2);
     mochkil.setCollideWorldBounds(true);
     
