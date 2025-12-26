@@ -88,8 +88,8 @@ for(let i=0;i<80;i++){
 
 /* STARS */
 const stars = [];
-for(let i=0;i<120;i++){
-  stars.push({ x:Math.random()*5000, y:Math.random()*300, emoji:["⭐️","✨","🌟"][i%3] });
+for(let i=0;i<150;i++){
+  stars.push({ x:Math.random()*7000 - 2000, y:Math.random()*300, emoji:["⭐️","✨","🌟"][i%3] });
 }
 
 /* CLOUDS */
@@ -104,13 +104,13 @@ const farmObjects = [
   {emoji:"🐓", x:-1400, y:canvas.height-roadH-grassH+60, size:28},
   {emoji:"🐑", x:-1350, y:canvas.height-roadH-grassH+60, size:36},
   {emoji:"🐖", x:-1300, y:canvas.height-roadH-grassH+60, size:36},
-  {emoji:"🏠", x:-1250, y:canvas.height-roadH-grassH+40, size:48},
+  {emoji:"🏠", x:-1250, y:canvas.height-roadH-grassH+40, size:100}, // larger house
   {emoji:"🐄", x:-1200, y:canvas.height-roadH-grassH+60, size:52}, // cow to abduct
   {emoji:"🐈", x:-1150, y:canvas.height-roadH-grassH+60, size:28},
 ];
 
 /* UFO */
-const ufo = { x:-900, y:canvas.height-roadH-grassH-200, size:60, active:false, swoopPhase:0 };
+const ufo = { x:-1200, y:canvas.height-roadH-grassH-200, size:60, active:false, swoopPhase:0 };
 let cow = farmObjects.find(obj=>obj.emoji==="🐄");
 let cowAbducted = false;
 
@@ -132,9 +132,11 @@ function update() {
     ufo.y = canvas.height-roadH-grassH-200 + Math.sin(ufo.swoopPhase)*20;
     ufo.size = 60 + Math.sin(ufo.swoopPhase)*10;
 
-    if(Math.abs(cow.x - scrollX) < 100){
+    // move cow directly under UFO
+    if(Math.abs(cow.x - scrollX - ufo.x) < 100){
       cow.y -= 2;
       cow.size += 0.5;
+      cow.x = ufo.x + scrollX; // align horizontally
       if(cow.y + cow.size/2 < ufo.y + ufo.size/2){ cowAbducted=true; }
     }
   }
