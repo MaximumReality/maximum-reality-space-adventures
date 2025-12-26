@@ -25,35 +25,29 @@ let cursors;
 let platforms;
 
 function preload() {
-    this.load.image('azul', 'assets/sprites/azul.png');
-    this.load.image('mochkil', 'assets/sprites/mochkil.png');
+    // No images needed for emojis
 }
 
 function create() {
     // WORLD SIZE
     this.physics.world.setBounds(0, 0, 1600, 600);
 
-    // GROUND (solid, visible, no tiles)
+    // GROUND (solid gray)
     platforms = this.physics.add.staticGroup();
-
     const ground = this.add.rectangle(800, 580, 1600, 40, 0x444444);
     this.physics.add.existing(ground, true);
     platforms.add(ground);
 
-    // AZUL (player)
-    player = this.physics.add.sprite(100, 450, 'azul');
-    player.setScale(0.5);
-    player.setBounce(0.1);
-    player.setCollideWorldBounds(true);
-
-    // MOCHKIL (tuxedo kitten 🖤🤍)
-    mochkil = this.physics.add.sprite(50, 450, 'mochkil');
-    mochkil.setScale(0.5);
-    mochkil.setBounce(0.1);
-    mochkil.setCollideWorldBounds(true);
-
-    // COLLISIONS
+    // AZUL (🟢 player)
+    player = this.add.text(100, 450, '🐱', { fontSize: '48px' });
+    this.physics.add.existing(player);
+    player.body.setCollideWorldBounds(true);
     this.physics.add.collider(player, platforms);
+
+    // MOCHKIL (🟢 sidekick)
+    mochkil = this.add.text(50, 450, '🐈‍⬛', { fontSize: '48px' });
+    this.physics.add.existing(mochkil);
+    mochkil.body.setCollideWorldBounds(true);
     this.physics.add.collider(mochkil, platforms);
 
     // INPUT
@@ -66,29 +60,21 @@ function create() {
 
 function update() {
     // PLAYER MOVEMENT
-    if (cursors.left.isDown) {
-        player.setVelocityX(-200);
-    } else if (cursors.right.isDown) {
-        player.setVelocityX(200);
-    } else {
-        player.setVelocityX(0);
-    }
+    const speed = 200;
+    if (cursors.left.isDown) player.body.setVelocityX(-speed);
+    else if (cursors.right.isDown) player.body.setVelocityX(speed);
+    else player.body.setVelocityX(0);
 
-    if (cursors.up.isDown && player.body.touching.down) {
-        player.setVelocityY(-400);
-    }
+    if (cursors.up.isDown && player.body.blocked.down) player.body.setVelocityY(-400);
 
     // MOCHKIL FOLLOW AI
     const followDistance = 60;
     const followSpeed = 120;
 
     if (Math.abs(player.x - mochkil.x) > followDistance) {
-        if (player.x > mochkil.x) {
-            mochkil.setVelocityX(followSpeed);
-        } else {
-            mochkil.setVelocityX(-followSpeed);
-        }
+        if (player.x > mochkil.x) mochkil.body.setVelocityX(followSpeed);
+        else mochkil.body.setVelocityX(-followSpeed);
     } else {
-        mochkil.setVelocityX(0);
+        mochkil.body.setVelocityX(0);
     }
 }
