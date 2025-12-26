@@ -133,7 +133,7 @@ function update(){
   player.vy += 1;
   player.y += player.vy;
 
-  const groundY = canvas.height - roadH - 28;
+  const groundY = canvas.height - roadH - 22;
   if(player.y > groundY){
     player.y = groundY;
     player.vy = 0;
@@ -190,7 +190,7 @@ function draw(){
 
   /* PLAYER */
   ctx.font="56px sans-serif";
-  const emoji = player.dir==="right" ? "🏃🏼‍♀️‍➡️" : "🏃‍♀️";
+  const emoji = player.dir==="right" ? "🏃🏼‍♀️‍➡️" : "🏃🏼‍♀️";
   ctx.fillText(emoji, player.x, player.y);
 }
 
