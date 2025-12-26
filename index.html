@@ -133,7 +133,7 @@ function update(){
   player.vy += 1;
   player.y += player.vy;
 
-  const groundY = canvas.height - roadH - 22;
+  const groundY = canvas.height - roadH - 18;
   if(player.y > groundY){
     player.y = groundY;
     player.vy = 0;
