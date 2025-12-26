@@ -74,10 +74,16 @@ function create() {
 
 function createButton(scene, x, y, label, onDown, onUp) {
     const btn = scene.add.text(x, y, label, {
-        fontSize: '48px',
-        backgroundColor: '#333',
-        padding: { x: 10, y: 5 }
-    }).setScrollFactor(0).setInteractive();
+        fontSize: '56px',
+        backgroundColor: '#ffcc00',   // BRIGHT YELLOW
+        color: '#000000',             // BLACK TEXT
+        padding: { x: 20, y: 12 },
+        stroke: '#ff0000',            // RED OUTLINE
+        strokeThickness: 4
+    })
+    .setScrollFactor(0)
+    .setDepth(1000)                  // ALWAYS ON TOP
+    .setInteractive({ useHandCursor: true });
 
     btn.on('pointerdown', onDown);
     btn.on('pointerup', onUp);
