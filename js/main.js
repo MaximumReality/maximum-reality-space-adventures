@@ -30,7 +30,7 @@ let platforms, foods;
 let idleTime = 0;
 let lastPlatformX = 0;
 
-// Define space zones (x start and end)
+// Space zones (x start/end)
 const spaceZones = [
     { start: 800, end: 1400 },
     { start: 2200, end: 2800 },
@@ -43,7 +43,6 @@ function create() {
     this.physics.world.setBounds(0, 0, Number.MAX_SAFE_INTEGER, WORLD_HEIGHT);
     this.cameras.main.setBounds(0, 0, Number.MAX_SAFE_INTEGER, WORLD_HEIGHT);
 
-    // Groups
     platforms = this.physics.add.staticGroup();
     foods = this.physics.add.group();
 
@@ -52,56 +51,47 @@ function create() {
     lastPlatformX = 400;
 
     // Player (Azul)
-    player = this.add.text(100, 200, '🐱', {
-        fontSize: '64px',
-        shadow: { offsetX: 0, offsetY: 0, color: '#00ffff', blur: 12 }
-    });
+    player = this.add.text(100, 200, '🐱', { fontSize: '64px', shadow: { offsetX:0, offsetY:0, color:'#00ffff', blur:12 } });
     this.physics.add.existing(player);
     setupBody(player, 0.2);
     player.inSpace = false;
 
     // Mochkil (Tuxedo)
-    mochkil = this.add.text(30, 200, '🐈‍⬛', {
-        fontSize: '64px',
-        shadow: { offsetX: 0, offsetY: 0, color: '#ffffff', blur: 10 }
-    });
+    mochkil = this.add.text(30, 200, '🐈‍⬛', { fontSize: '64px', shadow: { offsetX:0, offsetY:0, color:'#ffffff', blur:10 } });
     this.physics.add.existing(mochkil);
     setupBody(mochkil, 0.3);
 
-    // ===== COLLISIONS =====
+    // Collisions
     this.physics.add.collider(player, platforms);
     this.physics.add.collider(mochkil, platforms);
     this.physics.add.collider(foods, platforms);
     this.physics.add.overlap(mochkil, foods, eatFood, null, this);
 
-    // Disable Mochkil blocking Azul
-    mochkil.body.checkCollision.none = true;
+    mochkil.body.checkCollision.none = true; // Mochkil won't block Azul
 
     // Camera
     this.cameras.main.startFollow(player);
 
     // UI Bar
     this.add.rectangle(
-        config.width / 2,
-        WORLD_HEIGHT + CONTROL_BAR_HEIGHT / 2,
+        config.width/2,
+        WORLD_HEIGHT + CONTROL_BAR_HEIGHT/2,
         config.width,
         CONTROL_BAR_HEIGHT,
         0x111111
-    )
-    .setScrollFactor(0)
-    .setDepth(500);
+    ).setScrollFactor(0).setDepth(500);
 
     // Buttons
     const buttonY = WORLD_HEIGHT + 30;
     createButton(this, 80, buttonY, '◀', () => leftDown = true, () => leftDown = false);
     createButton(this, 180, buttonY, '▶', () => rightDown = true, () => rightDown = false);
-    createButton(this, config.width - 120, buttonY, '⬆', () => jumpDown = true, () => jumpDown = false);
+    createButton(this, config.width-120, buttonY, '⬆', () => jumpDown = true, () => jumpDown = false);
 }
 
 function update() {
     idleTime += 0.05;
 
-    // ===== SPACE ZONES =====
+    // Space zones
     let inSpace = false;
     spaceZones.forEach(zone => {
         if (player.x >= zone.start && player.x <= zone.end) inSpace = true;
@@ -110,129 +100,120 @@ function update() {
     player.body.gravity.y = inSpace ? 300 : 900;
     mochkil.body.gravity.y = inSpace ? 300 : 900;
 
-    if (inSpace && !player.inSpace) {
-        showScienceMessage(this, "In space, gravity is weaker!");
-    }
+    if (inSpace && !player.inSpace) showScienceMessage(this, "In space, gravity is weaker!");
     player.inSpace = inSpace;
 
-    // ===== PLAYER MOVEMENT =====
-    if (leftDown) {
-        player.body.setVelocityX(-220);
-        player.scaleX = -1;
-    } else if (rightDown) {
-        player.body.setVelocityX(220);
-        player.scaleX = 1;
-    } else {
-        player.body.setVelocityX(0);
-    }
+    // Player movement
+    if (leftDown) { player.body.setVelocityX(-220); player.scaleX=-1; }
+    else if (rightDown) { player.body.setVelocityX(220); player.scaleX=1; }
+    else { player.body.setVelocityX(0); }
 
     if (jumpDown && player.body.blocked.down) {
         player.body.setVelocityY(-450);
-        this.cameras.main.shake(120, 0.004);
+        this.cameras.main.shake(120,0.004);
     }
 
-    // ===== MOCHKIL AI (smooth follow) =====
+    // Mochkil AI - smooth follow
     const followSpeed = 160;
     const dx = player.x - mochkil.x;
     mochkil.body.setVelocityX(Phaser.Math.Clamp(dx, -followSpeed, followSpeed));
 
-    // Keep Mochkil on platform visually
-    if (mochkil.body.blocked.down) {
-        mochkil.y = WORLD_HEIGHT - 60; // adjust based on platform Y
+    // Smooth Y follow to platform below
+    const platformUnder = getPlatformYUnder(mochkil);
+    if(platformUnder!==null){
+        mochkil.y = Phaser.Math.Linear(mochkil.y, platformUnder - 40, 0.2);
     }
 
     // Idle bounce
-    if (player.body.blocked.down) {
-        player.y += Math.sin(idleTime) * 0.2;
-        mochkil.y += Math.sin(idleTime + 1) * 0.25;
+    if(player.body.blocked.down){
+        player.y += Math.sin(idleTime)*0.2;
+        mochkil.y += Math.sin(idleTime+1)*0.25;
     }
 
     // Spawn new platform
-    if (player.x + 600 > lastPlatformX) {
-        const width = Phaser.Math.Between(200, 400);
-        const heightOffset = Phaser.Math.Between(-50, 50);
-        const newY = Phaser.Math.Clamp(WORLD_HEIGHT - 20 + heightOffset, 300, WORLD_HEIGHT - 20);
+    if(player.x + 600 > lastPlatformX){
+        const width = Phaser.Math.Between(200,400);
+        const heightOffset = Phaser.Math.Between(-20,20);
+        const newY = Phaser.Math.Clamp(WORLD_HEIGHT-20 + heightOffset, WORLD_HEIGHT-100, WORLD_HEIGHT-20);
         spawnPlatform(this, lastPlatformX, newY, width);
         lastPlatformX += width;
 
-        // Random food
-        if (Phaser.Math.Between(0,1)) {
+        // Food above platform
+        if(Phaser.Math.Between(0,1)){
             const food = this.add.text(lastPlatformX - width/2, newY - 50, Phaser.Math.RND.pick(['🍕','🌮']), {
-                fontSize: '48px',
-                shadow: { offsetX: 0, offsetY: 0, color: '#ffcc00', blur: 10 }
+                fontSize:'48px',
+                shadow:{offsetX:0, offsetY:0,color:'#ffcc00', blur:10}
             });
             this.physics.add.existing(food);
             food.body.setBounce(0.7);
             foods.add(food);
         }
 
-        // Remove old platforms/foods
-        platforms.children.iterate(p => { if (p.x + p.width/2 < player.x - 800) p.destroy(); });
-        foods.children.iterate(f => { if (f.x < player.x - 800) f.destroy(); });
+        // Remove old
+        platforms.children.iterate(p=>{ if(p.x + p.width/2 < player.x -800) p.destroy(); });
+        foods.children.iterate(f=>{ if(f.x < player.x -800) f.destroy(); });
     }
 }
 
-function spawnPlatform(scene, x, y, width = 200) {
+// Returns platform Y under given object or null
+function getPlatformYUnder(obj){
+    let closestY = null;
+    platforms.children.iterate(p=>{
+        if(obj.x >= p.x - p.width/2 && obj.x <= p.x + p.width/2){
+            closestY = p.y;
+        }
+    });
+    return closestY;
+}
+
+function spawnPlatform(scene, x, y, width=200){
     const platform = scene.add.rectangle(x + width/2, y, width, 40, 0x666666);
-    scene.physics.add.existing(platform, true);
+    scene.physics.add.existing(platform,true);
     platforms.add(platform);
 }
 
-function eatFood(mochkil, food) {
+function eatFood(mochkil, food){
     this.tweens.add({
         targets: food,
         scale: 2,
         alpha: 0,
         duration: 200,
-        onComplete: () => food.destroy()
+        onComplete: ()=>food.destroy()
     });
 
     this.tweens.add({
         targets: mochkil,
-        scaleX: 1.3,
-        scaleY: 1.3,
-        yoyo: true,
-        duration: 120
+        scaleX:1.3,
+        scaleY:1.3,
+        yoyo:true,
+        duration:120
     });
 }
 
-function setupBody(obj, bounce) {
+function setupBody(obj, bounce){
     obj.body.setCollideWorldBounds(false);
     obj.body.setBounce(bounce);
-    obj.body.setSize(40, 40);
-    obj.body.setOffset(10, 20);
+    obj.body.setSize(40,40);
+    obj.body.setOffset(10,20);
 }
 
-function createButton(scene, x, y, label, onDown, onUp) {
-    const btn = scene.add.text(x, y, label, {
-        fontSize: '56px',
-        backgroundColor: '#ffcc00',
-        color: '#000',
-        padding: { x: 20, y: 12 },
-        stroke: '#000000',
-        strokeThickness: 6
-    })
-    .setScrollFactor(0)
-    .setDepth(1000)
-    .setInteractive();
-
+function createButton(scene,x,y,label,onDown,onUp){
+    const btn = scene.add.text(x,y,label,{
+        fontSize:'56px',
+        backgroundColor:'#ffcc00',
+        color:'#000',
+        padding:{x:20,y:12},
+        stroke:'#000000',
+        strokeThickness:6
+    }).setScrollFactor(0).setDepth(1000).setInteractive();
     btn.on('pointerdown', onDown);
     btn.on('pointerup', onUp);
     btn.on('pointerout', onUp);
 }
 
-function showScienceMessage(scene, text) {
-    const msg = scene.add.text(
-        scene.cameras.main.scrollX + 400,
-        100,
-        text,
-        { fontSize: '32px', fill: '#00ffff', backgroundColor: '#111', padding: 10 }
+function showScienceMessage(scene,text){
+    const msg = scene.add.text(scene.cameras.main.scrollX + 400, 100, text,
+        {fontSize:'32px',fill:'#00ffff',backgroundColor:'#111',padding:10}
     ).setScrollFactor(0);
-    scene.tweens.add({
-        targets: msg,
-        alpha: 0,
-        duration: 3000,
-        ease: 'Power1',
-        onComplete: () => msg.destroy()
-    });
+    scene.tweens.add({targets:msg,alpha:0,duration:3000,ease:'Power1',onComplete:()=>msg.destroy()});
 }
