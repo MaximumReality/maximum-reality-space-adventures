@@ -5,7 +5,7 @@ const config = {
     type: Phaser.AUTO,
     width: 800,
     height: 600,
-    backgroundColor: '#111111', // visible background
+    backgroundColor: '#222222', // visible background
     physics: {
         default: 'arcade',
         arcade: {
@@ -38,9 +38,6 @@ const spaceZones = [
 function preload() {}
 
 function create() {
-    // Background rectangle so screen isn’t black
-    this.add.rectangle(0, 0, Number.MAX_SAFE_INTEGER, 600, 0x222222).setOrigin(0,0);
-
     // Groups
     platforms = this.physics.add.staticGroup();
     foods = this.physics.add.group();
@@ -50,7 +47,7 @@ function create() {
     spawnPlatform(this, 0, initialY, 400);
     lastPlatformX = 400;
 
-    // Player (Azul) starts on platform
+    // Player (Azul) emoji
     player = this.add.text(100, initialY - 40, '🐱', {
         fontSize: '64px',
         shadow: { offsetX: 0, offsetY: 0, color: '#00ffff', blur: 12 }
@@ -59,7 +56,7 @@ function create() {
     setupBody(player, 0.2);
     player.inSpace = false;
 
-    // Mochkil (Tuxedo) starts on platform
+    // Mochkil (Tuxedo) emoji
     mochkil = this.add.text(30, initialY - 40, '🐈‍⬛', {
         fontSize: '64px',
         shadow: { offsetX: 0, offsetY: 0, color: '#ffffff', blur: 10 }
@@ -74,7 +71,7 @@ function create() {
     this.physics.add.collider(foods, platforms);
     this.physics.add.overlap(mochkil, foods, eatFood, null, this);
 
-    // Camera
+    // Camera follow
     this.cameras.main.startFollow(player);
     this.cameras.main.setBounds(0, 0, Number.MAX_SAFE_INTEGER, 600);
 
@@ -87,6 +84,7 @@ function create() {
         0x111111
     ).setScrollFactor(0).setDepth(500);
 
+    // Buttons below game
     const buttonY = WORLD_HEIGHT + 30;
     createButton(this, 80, buttonY, '◀', () => leftDown = true, () => leftDown = false);
     createButton(this, 180, buttonY, '▶', () => rightDown = true, () => rightDown = false);
@@ -125,7 +123,7 @@ function update() {
         this.cameras.main.shake(120, 0.004);
     }
 
-    // MOCHKIL AI (horizontal follow)
+    // MOCHKIL AI
     const followSpeed = 160;
     const dx = player.x - mochkil.x;
     mochkil.body.setVelocityX(Phaser.Math.Clamp(dx, -followSpeed, followSpeed));
@@ -162,6 +160,7 @@ function update() {
     }
 }
 
+// Helper functions
 function spawnPlatform(scene, x, y, width = 200) {
     const platform = scene.add.rectangle(x + width/2, y, width, 40, 0x666666);
     scene.physics.add.existing(platform, true);
