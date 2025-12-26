@@ -27,7 +27,7 @@ window.addEventListener("resize", resize);
 const ROAD_H = 80;
 const GRASS_H = 120;
 
-/* STARS */
+/* STAR FIELD */
 const stars = [];
 for(let i=0;i<150;i++){
   stars.push({
@@ -36,6 +36,13 @@ for(let i=0;i<150;i++){
     emoji: ["⭐️","✨","🌟"][i%3]
   });
 }
+
+/* SINGLE CITY BUILDING */
+const building = {
+  x: 200,
+  emoji: "🏢",
+  size: 120
+};
 
 function draw(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
@@ -54,15 +61,23 @@ function draw(){
   ctx.font="60px sans-serif";
   ctx.fillText("🌖", canvas.width-100, 100);
 
-  /* GRASS (LOCKED TO BOTTOM) */
+  /* GRASS */
   const grassY = canvas.height - ROAD_H - GRASS_H;
   ctx.fillStyle="#2f7d32";
   ctx.fillRect(0, grassY, canvas.width, GRASS_H);
 
-  /* ROAD (LOCKED TO BOTTOM) */
+  /* ROAD */
   const roadY = canvas.height - ROAD_H;
   ctx.fillStyle="#555";
   ctx.fillRect(0, roadY, canvas.width, ROAD_H);
+
+  /* CITY BUILDING — LOCKED TO GRASS LINE */
+  ctx.font = building.size + "px sans-serif";
+  ctx.fillText(
+    building.emoji,
+    building.x,
+    grassY + building.size - 10
+  );
 }
 
 function loop(){
