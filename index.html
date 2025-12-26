@@ -64,7 +64,7 @@ const clouds = [
     {x:450, y:80},
     {x:650, y:40}
 ];
-const rainbow = {x:WIDTH, y:ROAD_Y - GREEN_HEIGHT, emoji:"🌈"}; // flush right
+const rainbow = {x:WIDTH-64, y:ROAD_Y - GREEN_HEIGHT + 32, emoji:"🌈"}; // flush right, stationary
 
 // ---- Pre-generate some items for starting screen ----
 for(let i=0; i<10; i++){
@@ -151,7 +151,7 @@ function draw(){
         ctx.fillText("☁️", c.x, c.y);
     });
 
-    // ---- Rainbow 🌈 ----
+    // ---- Rainbow 🌈 (stationary) ----
     ctx.font="64px sans-serif";
     ctx.fillText(rainbow.emoji, rainbow.x, rainbow.y);
 
