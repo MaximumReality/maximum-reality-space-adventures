@@ -23,8 +23,11 @@ function resize(){
 resize();
 window.addEventListener("resize", resize);
 
-let scrollX = 0;
+/* CONSTANT WORLD HEIGHTS */
+const ROAD_H = 80;
+const GRASS_H = 120;
 
+/* STARS */
 const stars = [];
 for(let i=0;i<150;i++){
   stars.push({
@@ -35,16 +38,31 @@ for(let i=0;i<150;i++){
 }
 
 function draw(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  /* SKY */
   ctx.fillStyle="#020a2a";
   ctx.fillRect(0,0,canvas.width,canvas.height);
 
+  /* STARS */
   ctx.font="16px sans-serif";
   stars.forEach(s=>{
-    ctx.fillText(s.emoji, s.x - scrollX*0.2, s.y);
+    ctx.fillText(s.emoji, s.x, s.y);
   });
 
+  /* MOON */
   ctx.font="60px sans-serif";
   ctx.fillText("🌖", canvas.width-100, 100);
+
+  /* GRASS (LOCKED TO BOTTOM) */
+  const grassY = canvas.height - ROAD_H - GRASS_H;
+  ctx.fillStyle="#2f7d32";
+  ctx.fillRect(0, grassY, canvas.width, GRASS_H);
+
+  /* ROAD (LOCKED TO BOTTOM) */
+  const roadY = canvas.height - ROAD_H;
+  ctx.fillStyle="#555";
+  ctx.fillRect(0, roadY, canvas.width, ROAD_H);
 }
 
 function loop(){
