@@ -14,7 +14,11 @@ html,body{
   touch-action:none;
   font-family:sans-serif;
 }
-#game{ display:block; }
+
+#game{
+  display:block;
+}
+
 #controls{
   position:fixed;
   bottom:10px;
@@ -24,6 +28,7 @@ html,body{
   gap:12px;
   z-index:10;
 }
+
 button{
   font-size:26px;
   padding:12px 18px;
@@ -36,6 +41,7 @@ button{
 </head>
 
 <body>
+
 <canvas id="game"></canvas>
 
 <div id="controls">
@@ -102,41 +108,26 @@ for(let i=0;i<80;i++){
   });
 }
 
-/* OBSTACLES */
-const obstacles = [];
-function spawnObstacle(x){
-  obstacles.push({
-    x: x,
-    y: canvas.height - roadH - 56, // top of road
-    emoji: "🚧"
-  });
-}
-// Example obstacles
-spawnObstacle(800);
-spawnObstacle(1400);
-spawnObstacle(2000);
-
-/* STARS */
 const stars = [];
 for(let i=0;i<120;i++){
   stars.push({
-    x:Math.random()*5000,
+    x:Math.random()*8000 - 2000, // spread left and right
     y:Math.random()*300,
     emoji:["⭐️","✨","🌟"][i%3]
   });
 }
 
-/* CLOUDS */
 const clouds = [
   {x:200,y:120},{x:600,y:160},{x:1000,y:100}
 ];
 
-/* MOON */
-const moon = {x:50, y:50, emoji:"🌖"};
+const obstacles = [];
+
+// Spawn some obstacles on road
+[800, 1400, 2000].forEach(x=>obstacles.push({x:x, y:canvas.height-roadH-56, emoji:"🚧"}));
 
 /* LOOP */
 function update(){
-  // Scroll and direction
   if(left){
     scrollX -= 5;
     player.dir="left";
@@ -146,7 +137,6 @@ function update(){
     player.dir="right";
   }
 
-  // Jumping
   if(jump && !player.jumping){
     player.vy = -18;
     player.jumping = true;
@@ -161,24 +151,6 @@ function update(){
     player.vy = 0;
     player.jumping = false;
   }
-
-  // COLLISION DETECTION with obstacles
-  obstacles.forEach(o=>{
-    const px = player.x;
-    const py = player.y - 56; // top of player image
-    const ox = o.x - scrollX;
-    const oy = o.y;
-    const size = 56;
-
-    if(px < ox + size && px + size > ox &&
-       py < oy + size && py + size > oy){
-        // Player hits obstacle
-        player.x -= (player.dir==="right"?5:-5);
-        // Crash effect
-        ctx.font = "64px sans-serif";
-        ctx.fillText("💥", px, py - 20);
-    }
-  });
 }
 
 function draw(){
@@ -194,15 +166,15 @@ function draw(){
     ctx.fillText(s.emoji, s.x - scrollX*0.2, s.y);
   });
 
+  /* MOON */
+  ctx.font="64px sans-serif";
+  ctx.fillText("🌖", 50, 100);
+
   /* CLOUDS */
   ctx.font="48px sans-serif";
   clouds.forEach(c=>{
     ctx.fillText("☁️", c.x - scrollX*0.15, c.y);
   });
-
-  /* MOON */
-  ctx.font="64px sans-serif";
-  ctx.fillText(moon.emoji, moon.x, moon.y);
 
   /* GRASS */
   ctx.fillStyle="#2f7d32";
@@ -213,15 +185,18 @@ function draw(){
     grassH
   );
 
-  /* CITY */
+  /* CITY (x >= 0) */
   ctx.font="180px sans-serif";
   buildings.forEach(b=>{
-    ctx.fillText(
-      b.emoji,
-      b.x - scrollX*0.5,
-      canvas.height-roadH-grassH+10
-    );
+    if(b.x >= 0) ctx.fillText(b.emoji, b.x - scrollX*0.5, canvas.height-roadH-grassH+10);
   });
+
+  /* FOREST LEFT OF CITY */
+  ctx.font="140px sans-serif";
+  for(let x=-2000; x<0; x+=200){
+    const treeEmoji = Math.random()>0.5?"🌲":"🌳";
+    ctx.fillText(treeEmoji, x - scrollX*0.5, canvas.height-roadH-grassH+10);
+  }
 
   /* ROAD */
   ctx.fillStyle="#555";
@@ -232,21 +207,21 @@ function draw(){
     roadH
   );
 
-  /* PLAYER */
+  /* OBSTACLES */
+  ctx.font="56px sans-serif";
+  obstacles.forEach(o=>{
+    ctx.fillText(o.emoji, o.x - scrollX, o.y);
+  });
+
+  /* PLAYER (PNG) */
   const img = player.dir === "right" ? runnerRight : runnerLeft;
   ctx.drawImage(
     img,
     player.x,
-    player.y - 56,   // align feet to road
+    player.y - 56,
     56,
     56
   );
-
-  /* OBSTACLES */
-  ctx.font="56px sans-serif";
-  obstacles.forEach(o => {
-    ctx.fillText(o.emoji, o.x - scrollX, o.y);
-  });
 }
 
 function loop(){
