@@ -87,21 +87,21 @@ for(let i=0;i<20;i++){
 
 /* FOREST TREES */
 const forest = [];
-for(let i=0;i<40;i++){
-  forest.push({x:5000+i*120, emoji: i%2===0?"🌲":"🌳"});
+for(let i=0;i<25;i++){
+  forest.push({x:4200+i*160, emoji: i%2===0?"🌲":"🌳", size: 80 + Math.random()*40});
 }
 
 /* FARM OBJECTS */
 const farmObjects = [
-  {x:5600, emoji:"🏠", w:100},
+  {x:5600, emoji:"🏠", w:120},
   {x:5650, emoji:"🌾", w:20},
   {x:5700, emoji:"🌾", w:20},
   {x:5750, emoji:"🐓", w:25},
   {x:5780, emoji:"🐓", w:25},
   {x:5820, emoji:"🐑", w:35},
   {x:5850, emoji:"🐖", w:40},
-  {x:5900, emoji:"🐄", w:50, abducted:false},
-  {x:5950, emoji:"🚜", w:50},
+  {x:5900, emoji:"🐄", w:60, abducted:false},
+  {x:5950, emoji:"🚜", w:60},
   {x:5980, emoji:"🐈", w:20}
 ];
 
@@ -118,7 +118,7 @@ const clouds=[{x:200,y:120},{x:600,y:160},{x:1000,y:100}];
 const moon={x:80,y:80,emoji:"🌖"};
 
 /* UFO */
-const ufo={x:5900,y:-100,size:60,scale:0.5,active:false};
+const ufo={x:5900,y:-100,size:60,scale:0.5,active:false, targetCow:null};
 
 /* LOOP LOGIC */
 function update(){
@@ -132,13 +132,24 @@ function update(){
   const groundY = canvas.height - roadH - 18;
   if(player.y>groundY){ player.y=groundY; player.vy=0; player.jumping=false; }
 
-  // UFO logic
+  // UFO logic: target the cow
   const cow = farmObjects.find(o=>o.emoji==="🐄");
-  if(!ufo.active && scrollX+player.x>5800){ ufo.active=true; ufo.y=-100; ufo.scale=0.5; cow.abducted=false; cow.y=canvas.height-roadH-50; }
-  if(ufo.active){
-    if(ufo.y<cow.y-60){ ufo.y+=4; ufo.scale+=0.01; }
-    if(!cow.abducted && cow.y>ufo.y+10){ cow.y-=4; }
-    if(cow.y<=ufo.y+10){ cow.abducted=true; cow.y=-500; ufo.y=-100; ufo.scale=0.5; ufo.active=false; }
+  if(!ufo.active && scrollX+player.x>5800){ 
+    ufo.active=true; 
+    ufo.y=-100; 
+    ufo.scale=0.5; 
+    ufo.targetCow=cow; 
+    cow.abducted=false; 
+    cow.y=canvas.height-roadH-60;
+  }
+  if(ufo.active && ufo.targetCow){
+    const c = ufo.targetCow;
+    // UFO swoops
+    if(ufo.y<c.y-50) ufo.y+=4, ufo.scale+=0.01;
+    // Cow rises
+    if(!c.abducted && c.y>ufo.y+10) c.y-=4;
+    // Cow disappears into UFO
+    if(c.y<=ufo.y+10){ c.abducted=true; c.y=-500; ufo.y=-100; ufo.scale=0.5; ufo.active=false; ufo.targetCow=null; }
   }
 }
 
@@ -166,13 +177,15 @@ function draw(){
   cityBuildings.forEach(b=>ctx.fillText(b.emoji, b.x - scrollX, canvas.height-roadH-grassH+10));
 
   // FOREST
-  ctx.font="60px sans-serif";
-  forest.forEach(t=>ctx.fillText(t.emoji, t.x - scrollX, canvas.height-roadH-grassH+30));
+  forest.forEach(t=>{
+    ctx.font=`${t.size}px sans-serif`;
+    ctx.fillText(t.emoji, t.x - scrollX, canvas.height-roadH-grassH+10);
+  });
 
   // FARM
   farmObjects.forEach(f=>{
     ctx.font=`${f.w}px sans-serif`;
-    ctx.fillText(f.emoji, f.x - scrollX, canvas.height-roadH-grassH+10);
+    if(!f.abducted) ctx.fillText(f.emoji, f.x - scrollX, canvas.height-roadH-grassH+10);
   });
 
   // ROAD
