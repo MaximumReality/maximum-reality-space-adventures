@@ -64,7 +64,7 @@ const clouds = [
     {x:450, y:80},
     {x:650, y:40}
 ];
-const rainbow = {x:WIDTH-100, y:ROAD_Y - GREEN_HEIGHT, emoji:"🌈"};
+const rainbow = {x:WIDTH, y:ROAD_Y - GREEN_HEIGHT, emoji:"🌈"}; // flush right
 
 // ---- Pre-generate some items for starting screen ----
 for(let i=0; i<10; i++){
@@ -129,6 +129,9 @@ function update(){
     // Remove old food/decorations far behind
     foods = foods.filter(f=>f.x > player.x - WIDTH*2);
     decorations = decorations.filter(d=>d.x > player.x - WIDTH*2);
+
+    // Keep foods on top of grey road
+    foods.forEach(f => { f.y = ROAD_Y - 48; });
 }
 
 // ---- Draw everything ----
