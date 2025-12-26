@@ -107,10 +107,9 @@ for(let i=0;i<80;i++){
     emoji:["🏢","🏬","🏭","🏨","🏦","🏥","🏠","🏡","🕌","⛪️","🏟️"][i%11]
   });
 }
+
 /* OBSTACLES */
 const obstacles = [];
-
-// Function to spawn an obstacle
 function spawnObstacle(x){
   obstacles.push({
     x: x,
@@ -118,8 +117,7 @@ function spawnObstacle(x){
     emoji: "🚧"
   });
 }
-
-// Example: spawn a few obstacles
+// Example obstacles
 spawnObstacle(800);
 spawnObstacle(1400);
 spawnObstacle(2000);
@@ -171,6 +169,10 @@ function draw(){
   ctx.fillStyle="#020a2a";
   ctx.fillRect(0,0,canvas.width,canvas.height);
 
+  /* MOON 🌖 */
+  ctx.font="64px sans-serif";
+  ctx.fillText("🌖", 50, 100);
+
   /* STARS */
   ctx.font="16px sans-serif";
   stars.forEach(s=>{
@@ -213,7 +215,6 @@ function draw(){
 
   /* PLAYER (PNG) */
   const img = player.dir === "right" ? runnerRight : runnerLeft;
-
   ctx.drawImage(
     img,
     player.x,
@@ -221,12 +222,14 @@ function draw(){
     56,
     56
   );
+
+  /* OBSTACLES */
+  ctx.font = "56px sans-serif";
+  obstacles.forEach(o => {
+    ctx.fillText(o.emoji, o.x - scrollX, o.y);
+  });
 }
-// Draw obstacles
-ctx.font = "56px sans-serif";
-obstacles.forEach(o => {
-  ctx.fillText(o.emoji, o.x - scrollX, o.y);
-});
+
 function loop(){
   update();
   draw();
