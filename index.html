@@ -111,7 +111,7 @@ const clouds = [
 
 /* FARM ELEMENTS */
 const farmObjects = [
-  {x:3200, y:0, emoji:"🏠", width:120, height:120},
+  {x:3200, y:0, emoji:"🏠", width:100, height:100},
   {x:3300, y:0, emoji:"🚜", width:60, height:60},
   {x:3250, y:0, emoji:"🐄", width:60, height:60}, // abducted cow
   {x:3220, y:0, emoji:"🐑", width:40, height:40},
@@ -195,7 +195,7 @@ function draw(){
   });
 
   // city buildings
-  ctx.font="120px sans-serif";
+  ctx.font="180px sans-serif";
   cityBuildings.forEach(b=>{
     ctx.fillText(b.emoji, b.x - scrollX, canvas.height-roadH-grassH+10);
   });
