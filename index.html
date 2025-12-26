@@ -100,8 +100,7 @@ bind(document.getElementById("jump"),
   ()=>jump=true, ()=>jump=false);
 
 /* BACKGROUND DECOR */
-
-/* CITY */
+// City buildings (right side)
 const buildings = [];
 for(let i=0;i<80;i++){
   buildings.push({
@@ -110,43 +109,36 @@ for(let i=0;i<80;i++){
   });
 }
 
-/* FOREST LEFT OF CITY */
-const forest = [];
-for(let x=-2000; x<0; x+=200){
-  const treeEmoji = Math.random() > 0.5 ? "🌲" : "🌳";
-  forest.push({x:x, emoji: treeEmoji});
-}
+// Forest (left side)
+const forestEmojis = ["🌲","🌳"];
 
-/* OBSTACLES */
-const obstacles = [];
-function spawnObstacle(x){
-  obstacles.push({
-    x: x,
-    y: canvas.height - roadH - 56,
-    emoji: "🚧"
-  });
-}
-spawnObstacle(800);
-spawnObstacle(1400);
-spawnObstacle(2000);
-
-/* STARS */
+// Stars (full world)
 const stars = [];
-for(let i=0;i<120;i++){
+for(let i=0;i<200;i++){
   stars.push({
-    x:Math.random()*5000,
+    x:Math.random()*7000 - 2000, // from -2000 to 5000
     y:Math.random()*300,
     emoji:["⭐️","✨","🌟"][i%3]
   });
 }
 
-/* CLOUDS */
+// Clouds
 const clouds = [
   {x:200,y:120},{x:600,y:160},{x:1000,y:100}
 ];
 
-/* MOON */
-const moon = {x:50, y:50, emoji:"🌖"};
+// Obstacles
+const obstacles = [];
+function spawnObstacle(x){
+  obstacles.push({
+    x:x,
+    y:canvas.height-roadH-56,
+    emoji:"🚧"
+  });
+}
+spawnObstacle(800);
+spawnObstacle(1400);
+spawnObstacle(2000);
 
 /* LOOP */
 function update(){
@@ -182,6 +174,10 @@ function draw(){
   ctx.fillStyle="#020a2a";
   ctx.fillRect(0,0,canvas.width,canvas.height);
 
+  /* MOON */
+  ctx.font="64px sans-serif";
+  ctx.fillText("🌖", 50, 100);
+
   /* STARS */
   ctx.font="16px sans-serif";
   stars.forEach(s=>{
@@ -194,10 +190,6 @@ function draw(){
     ctx.fillText("☁️", c.x - scrollX*0.15, c.y);
   });
 
-  /* MOON */
-  ctx.font="48px sans-serif";
-  ctx.fillText(moon.emoji, moon.x, moon.y);
-
   /* GRASS */
   ctx.fillStyle="#2f7d32";
   ctx.fillRect(
@@ -206,12 +198,6 @@ function draw(){
     canvas.width,
     grassH
   );
-
-  /* FOREST */
-  ctx.font="140px sans-serif";
-  forest.forEach(f=>{
-    ctx.fillText(f.emoji, f.x - scrollX*0.5, canvas.height-roadH-grassH+10);
-  });
 
   /* CITY */
   ctx.font="180px sans-serif";
@@ -223,6 +209,14 @@ function draw(){
     );
   });
 
+  /* FOREST (left) */
+  ctx.font="140px sans-serif";
+  for(let i=0;i<50;i++){
+    const f = forestEmojis[i % 2];
+    const x = -i*200 - scrollX*0.5;
+    ctx.fillText(f, x, canvas.height-roadH-grassH+10);
+  }
+
   /* ROAD */
   ctx.fillStyle="#555";
   ctx.fillRect(
@@ -232,13 +226,7 @@ function draw(){
     roadH
   );
 
-  /* OBSTACLES */
-  ctx.font="56px sans-serif";
-  obstacles.forEach(o=>{
-    ctx.fillText(o.emoji, o.x - scrollX, o.y);
-  });
-
-  /* PLAYER */
+  /* PLAYER (PNG) */
   const img = player.dir === "right" ? runnerRight : runnerLeft;
   ctx.drawImage(
     img,
@@ -247,6 +235,12 @@ function draw(){
     56,
     56
   );
+
+  /* OBSTACLES */
+  ctx.font="56px sans-serif";
+  obstacles.forEach(o=>{
+    ctx.fillText(o.emoji, o.x - scrollX, o.y);
+  });
 }
 
 function loop(){
