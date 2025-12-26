@@ -92,7 +92,7 @@ bind(document.getElementById("jump"), ()=>jump=true, ()=>jump=false);
 /* BACKGROUND DECOR */
 const cityBuildings = [];
 for(let i=0;i<20;i++){
-  cityBuildings.push({x:i*180, emoji:["🏢","🏬","🏭","🏨","🏦","🏥","🏠","🏡","🕌","⛪️","🏟️"][i%11]});
+  cityBuildings.push({x:i*130, emoji:["🏢","🏬","🏭","🏨","🏦","🏥","🏠","🏡","🕌","⛪️","🏟️"][i%11]});
 }
 
 const forestTrees = [];
@@ -111,7 +111,7 @@ const clouds = [
 
 /* FARM ELEMENTS */
 const farmObjects = [
-  {x:3200, y:0, emoji:"🏠", width:100, height:100},
+  {x:3200, y:0, emoji:"🏠", width:150, height:170},
   {x:3300, y:0, emoji:"🚜", width:60, height:60},
   {x:3250, y:0, emoji:"🐄", width:60, height:60}, // abducted cow
   {x:3220, y:0, emoji:"🐑", width:40, height:40},
@@ -123,7 +123,7 @@ const farmObjects = [
 ];
 
 /* UFO */
-const ufo = {x:3250, y:-100, size:60, active:false, scale:0.5};
+const ufo = {x:3250, y:-100, size:80, active:false, scale:0.5};
 
 /* LOOP */
 function update(){
@@ -195,7 +195,7 @@ function draw(){
   });
 
   // city buildings
-  ctx.font="180px sans-serif";
+  ctx.font="130px sans-serif";
   cityBuildings.forEach(b=>{
     ctx.fillText(b.emoji, b.x - scrollX, canvas.height-roadH-grassH+10);
   });
