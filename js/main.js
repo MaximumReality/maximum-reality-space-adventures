@@ -30,30 +30,37 @@ let platforms, foods;
 let idleTime = 0;
 let lastPlatformX = 0;
 
+// Define space zones (x start and end)
+const spaceZones = [
+    { start: 800, end: 1400 },
+    { start: 2200, end: 2800 },
+];
+
 function preload() {}
 
 function create() {
-    // ✅ Infinite world
+    // Infinite world
     this.physics.world.setBounds(0, 0, Number.MAX_SAFE_INTEGER, WORLD_HEIGHT);
     this.cameras.main.setBounds(0, 0, Number.MAX_SAFE_INTEGER, WORLD_HEIGHT);
 
-    // ===== GROUPS =====
+    // Groups
     platforms = this.physics.add.staticGroup();
     foods = this.physics.add.group();
 
-    // ===== INITIAL PLATFORM =====
+    // Initial platform
     spawnPlatform(this, 0, WORLD_HEIGHT - 20, 400);
     lastPlatformX = 400;
 
-    // ===== PLAYER (AZUL) =====
+    // Player (Azul)
     player = this.add.text(100, 200, '🐱', {
         fontSize: '64px',
         shadow: { offsetX: 0, offsetY: 0, color: '#00ffff', blur: 12 }
     });
     this.physics.add.existing(player);
     setupBody(player, 0.2);
+    player.inSpace = false;
 
-    // ===== MOCHKIL (TUXEDO) =====
+    // Mochkil (Tuxedo)
     mochkil = this.add.text(30, 200, '🐈‍⬛', {
         fontSize: '64px',
         shadow: { offsetX: 0, offsetY: 0, color: '#ffffff', blur: 10 }
@@ -61,16 +68,16 @@ function create() {
     this.physics.add.existing(mochkil);
     setupBody(mochkil, 0.3);
 
-    // ===== COLLISIONS =====
+    // Collisions
     this.physics.add.collider(player, platforms);
     this.physics.add.collider(mochkil, platforms);
     this.physics.add.collider(foods, platforms);
     this.physics.add.overlap(mochkil, foods, eatFood, null, this);
 
-    // ===== CAMERA =====
+    // Camera
     this.cameras.main.startFollow(player);
 
-    // ===== UI BAR =====
+    // UI Bar
     this.add.rectangle(
         config.width / 2,
         WORLD_HEIGHT + CONTROL_BAR_HEIGHT / 2,
@@ -81,9 +88,8 @@ function create() {
     .setScrollFactor(0)
     .setDepth(500);
 
-    // ===== BUTTONS =====
+    // Buttons
     const buttonY = WORLD_HEIGHT + 30;
-
     createButton(this, 80, buttonY, '◀', () => leftDown = true, () => leftDown = false);
     createButton(this, 180, buttonY, '▶', () => rightDown = true, () => rightDown = false);
     createButton(this, config.width - 120, buttonY, '⬆', () => jumpDown = true, () => jumpDown = false);
@@ -92,7 +98,23 @@ function create() {
 function update() {
     idleTime += 0.05;
 
-    // ===== PLAYER MOVE =====
+    // Check space zones
+    let inSpace = false;
+    spaceZones.forEach(zone => {
+        if (player.x >= zone.start && player.x <= zone.end) inSpace = true;
+    });
+
+    // Update gravity
+    player.body.gravity.y = inSpace ? 300 : 900;
+    mochkil.body.gravity.y = inSpace ? 300 : 900;
+
+    // Show popup only when first entering
+    if (inSpace && !player.inSpace) {
+        showScienceMessage(this, "In space, gravity is weaker!");
+    }
+    player.inSpace = inSpace;
+
+    // Player movement
     if (leftDown) {
         player.body.setVelocityX(-220);
         player.scaleX = -1;
@@ -108,17 +130,17 @@ function update() {
         this.cameras.main.shake(120, 0.004);
     }
 
-    // ===== MOCHKIL AI =====
+    // Mochkil AI
     const dx = player.x - mochkil.x;
     mochkil.body.setVelocityX(Math.abs(dx) > 60 ? Math.sign(dx) * 160 : 0);
 
-    // ===== IDLE BOUNCE =====
+    // Idle bounce
     if (player.body.blocked.down) {
         player.y += Math.sin(idleTime) * 0.2;
         mochkil.y += Math.sin(idleTime + 1) * 0.25;
     }
 
-    // ===== SPAWN NEW PLATFORM =====
+    // Spawn new platform
     if (player.x + 600 > lastPlatformX) {
         const width = Phaser.Math.Between(200, 400);
         const heightOffset = Phaser.Math.Between(-50, 50);
@@ -126,7 +148,7 @@ function update() {
         spawnPlatform(this, lastPlatformX, newY, width);
         lastPlatformX += width;
 
-        // Random food on platform
+        // Random food
         if (Phaser.Math.Between(0,1)) {
             const food = this.add.text(lastPlatformX - width/2, newY - 50, Phaser.Math.RND.pick(['🍕','🌮']), {
                 fontSize: '48px',
@@ -137,14 +159,9 @@ function update() {
             foods.add(food);
         }
 
-        // Remove old platforms to save memory
-        platforms.children.iterate(p => {
-            if (p.x + p.width/2 < player.x - 800) p.destroy();
-        });
-
-        foods.children.iterate(f => {
-            if (f.x < player.x - 800) f.destroy();
-        });
+        // Remove old platforms/foods
+        platforms.children.iterate(p => { if (p.x + p.width/2 < player.x - 800) p.destroy(); });
+        foods.children.iterate(f => { if (f.x < player.x - 800) f.destroy(); });
     }
 }
 
@@ -173,7 +190,7 @@ function eatFood(mochkil, food) {
 }
 
 function setupBody(obj, bounce) {
-    obj.body.setCollideWorldBounds(false); // allow infinite scroll
+    obj.body.setCollideWorldBounds(false);
     obj.body.setBounce(bounce);
     obj.body.setSize(40, 40);
     obj.body.setOffset(10, 20);
@@ -195,4 +212,20 @@ function createButton(scene, x, y, label, onDown, onUp) {
     btn.on('pointerdown', onDown);
     btn.on('pointerup', onUp);
     btn.on('pointerout', onUp);
+}
+
+function showScienceMessage(scene, text) {
+    const msg = scene.add.text(
+        scene.cameras.main.scrollX + 400,
+        100,
+        text,
+        { fontSize: '32px', fill: '#00ffff', backgroundColor: '#111', padding: 10 }
+    ).setScrollFactor(0);
+    scene.tweens.add({
+        targets: msg,
+        alpha: 0,
+        duration: 3000,
+        ease: 'Power1',
+        onComplete: () => msg.destroy()
+    });
 }
