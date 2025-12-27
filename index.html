@@ -32,8 +32,9 @@ window.addEventListener("resize", resize);
 const ROAD_H = 80;
 const GRASS_H = 120;
 const groundY = canvas.height-ROAD_H-18;
+const treeY = canvas.height - ROAD_H - GRASS_H; // horizon line
 
-/* PLAYER */
+  /* PLAYER */
 const player = {
   x: canvas.width/2,
   y: groundY,
@@ -66,7 +67,15 @@ const clouds=[{x:200,y:120},{x:600,y:160},{x:1000,y:100}];
 const buildings=[]; for(let i=0;i<10;i++){buildings.push({x:i*200,emoji:["🏢","🏬","🏭","🏨","🏦"][i%5],y:canvas.height-ROAD_H-GRASS_H+10});}
 
 /* FOREST TREES */
-const trees=[]; for(let i=0;i<15;i++){trees.push({x:2500 + i*150,y:canvas.height-ROAD_H-GRASS_H+20,emoji:i%2===0?"🌲":"🌳",size:80 + Math.random()*40});}
+const trees = [];
+for(let i=0;i<50;i++){
+  trees.push({
+    x: i*150, // spread across the whole scene
+    y: treeY,
+    emoji:"🌲",
+    size:80
+  });
+});
 
 /* FARM SCENE */
 const farm=[
@@ -132,7 +141,10 @@ function draw(){
   ctx.font="120px sans-serif"; buildings.forEach(b=>ctx.fillText(b.emoji,b.x-scrollX*0.5,b.y));
 
   // trees
-  trees.forEach(t=>{ctx.font=t.size+"px sans-serif"; ctx.fillText(t.emoji,t.x-scrollX,t.y);});
+  trees.forEach(t=>{
+  ctx.font = t.size + "px sans-serif";
+  ctx.fillText(t.emoji, t.x, t.y);
+});
 
   // farm
   farm.forEach(f=>{ctx.font=f.height+"px sans-serif"; if(!f.abducted) ctx.fillText(f.emoji,f.x-scrollX,f.y);});
