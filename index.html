@@ -24,95 +24,126 @@ button{font-size:26px;padding:12px 18px;border-radius:12px;border:none;backgroun
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
-function resize(){canvas.width=window.innerWidth; canvas.height=window.innerHeight;}
-resize();
-window.addEventListener("resize", resize);
-
-/* WORLD LAYOUT */
+/* WORLD CONSTANTS */
 const ROAD_H = 80;
 const GRASS_H = 120;
-const groundY = canvas.height - ROAD_H - 18;
-const treeY = canvas.height - ROAD_H - GRASS_H;
 
 /* PLAYER */
 const player = {
-  x: canvas.width/2,
-  y: groundY,
-  vy:0,
-  jumping:false,
-  dir:"right",
-  pngRight:"IMG_2161.png",
-  pngLeft:"IMG_2162.png"
+  x: 0,
+  y: 0,
+  vy: 0,
+  jumping: false,
+  dir: "right",
+  pngRight: "IMG_2161.png",
+  pngLeft: "IMG_2162.png"
 };
-const imgRight = new Image(); imgRight.src=player.pngRight;
-const imgLeft = new Image(); imgLeft.src=player.pngLeft;
-
-/* SCROLL */
-let scrollX = 0;
+const imgRight = new Image(); imgRight.src = player.pngRight;
+const imgLeft = new Image(); imgLeft.src = player.pngLeft;
 
 /* INPUT */
-let left=false, right=false, jump=false;
-function bind(btn,down,up){btn.addEventListener("touchstart",e=>{e.preventDefault(); down();}); btn.addEventListener("touchend",e=>{e.preventDefault(); up();});}
+let left=false,right=false,jump=false;
+function bind(btn,down,up){
+  btn.addEventListener("touchstart",e=>{e.preventDefault(); down();});
+  btn.addEventListener("touchend",e=>{e.preventDefault(); up();});
+}
 bind(document.getElementById("left"),()=>left=true,()=>left=false);
 bind(document.getElementById("right"),()=>right=true,()=>right=false);
 bind(document.getElementById("jump"),()=>jump=true,()=>jump=false);
 
-/* STARS */
-const stars=[]; for(let i=0;i<200;i++){stars.push({x:Math.random()*5000,y:Math.random()*200,emoji:["⭐️","✨","🌟"][i%3]});}
+/* SCROLL */
+let scrollX = 0;
 
-/* CLOUDS */
+/* STARS & CLOUDS */
+const stars=[]; for(let i=0;i<200;i++){stars.push({x:Math.random()*5000,y:Math.random()*200,emoji:["⭐️","✨","🌟"][i%3]});}
 const clouds=[{x:200,y:120},{x:600,y:160},{x:1000,y:100}];
 
 /* CITY BUILDINGS */
-const buildings=[]; for(let i=0;i<10;i++){buildings.push({x:i*200,emoji:["🏢","🏬","🏭","🏨","🏦"][i%5],y:treeY+20});}
-
-/* TREES (background, anchored) */
-const trees = [];
-for(let i=0;i<50;i++){
-  trees.push({x:i*150,y:treeY,emoji:"🌲",size:80});
+const buildings=[];
+for(let i=0;i<10;i++){
+  buildings.push({x:i*200,emoji:["🏢","🏬","🏭","🏨","🏦"][i%5],y:0});
 }
 
-/* FARM SCENE (anchored to ground) */
+/* TREES – stationary background */
+const trees=[];
+for(let i=0;i<50;i++){
+  trees.push({x:i*150,y:0,emoji:"🌲",size:80});
+}
+
+/* FARM */
 const farm=[
-  {emoji:"🏠",x:4500,y:groundY-70,width:100,height:100},
-  {emoji:"🌾",x:4470,y:groundY+10,width:20,height:20},
-  {emoji:"🌾",x:4540,y:groundY+15,width:20,height:20},
-  {emoji:"🚜",x:4400,y:groundY+10,width:60,height:60},
-  {emoji:"🐓",x:4420,y:groundY+30,width:20,height:20},
-  {emoji:"🐓",x:4560,y:groundY+35,width:20,height:20},
-  {emoji:"🐑",x:4480,y:groundY+30,width:30,height:30},
-  {emoji:"🐖",x:4520,y:groundY+30,width:25,height:25},
-  {emoji:"🐄",x:4500,y:groundY+40,width:50,height:50,abducted:false},
-  {emoji:"🐈",x:4460,y:groundY+30,width:15,height:15}
+  {emoji:"🏠",x:4500,y:0,width:100,height:100},
+  {emoji:"🌾",x:4470,y:0,width:20,height:20},
+  {emoji:"🌾",x:4540,y:0,width:20,height:20},
+  {emoji:"🚜",x:4400,y:0,width:60,height:60},
+  {emoji:"🐓",x:4420,y:0,width:20,height:20},
+  {emoji:"🐓",x:4560,y:0,width:20,height:20},
+  {emoji:"🐑",x:4480,y:0,width:30,height:30},
+  {emoji:"🐖",x:4520,y:0,width:25,height:25},
+  {emoji:"🐄",x:4500,y:0,width:50,height:50,abducted:false},
+  {emoji:"🐈",x:4460,y:0,width:15,height:15}
 ];
 
 /* UFO */
-const ufo={active:false,x:4500,y:groundY-200,size:60,step:0,timer:0};
+const ufo={active:false,x:4500,y:0,size:60,step:0};
+
+/* DYNAMIC RESIZE & POSITIONING */
+let groundY, grassY, treeY;
+function resize(){
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+
+  groundY = canvas.height - ROAD_H - 18;
+  grassY = canvas.height - ROAD_H - GRASS_H;
+  treeY = grassY; // horizon line for trees
+
+  player.y = groundY;
+
+  // Buildings sit between green and trees
+  buildings.forEach(b=>b.y = grassY - 10);
+
+  // Trees anchored on horizon
+  trees.forEach(t=>t.y = treeY);
+
+  // Farm animals/house
+  farm[0].y = grassY - farm[0].height; // house
+  for(let i=1;i<farm.length;i++){
+    farm[i].y = grassY - (farm[i].height/2); // animals/tractor
+  }
+
+  // UFO
+  ufo.y = farm.find(f=>f.emoji==="🐄").y - 200;
+}
+resize();
+window.addEventListener("resize", resize);
 
 /* UPDATE LOOP */
+let abductionTimer = 0;
 function update(){
-  // Player movement
-  if(left){player.x-=5; player.dir="left";}
-  if(right){player.x+=5; player.dir="right";}
-  if(jump && !player.jumping){player.vy=-18; player.jumping=true;}
+  if(left){scrollX-=5; player.dir="left";}
+  if(right){scrollX+=5; player.dir="right";}
+
+  if(jump && !player.jumping){player.vy=-18;player.jumping=true;}
   player.vy+=1;
   player.y+=player.vy;
-  if(player.y>groundY){player.y=groundY; player.vy=0; player.jumping=false;}
+  if(player.y>groundY){player.y=groundY;player.vy=0;player.jumping=false;}
 
-  // Scroll camera to keep player centered
-  scrollX = player.x - canvas.width/2;
-
-  // UFO Abduction (repeat ~12 sec)
-  ufo.timer++;
-  const cow=farm.find(f=>f.emoji==="🐄");
-  if(!ufo.active && !cow.abducted && ufo.timer>720){ // ~12 sec at 60fps
-    ufo.active=true; ufo.step=0; ufo.y=cow.y-200; ufo.timer=0; cow.abducted=false; cow.y=groundY+40;
+  // UFO abduction repeats every ~15 sec
+  abductionTimer++;
+  const cow = farm.find(f=>f.emoji==="🐄");
+  if(!ufo.active && !cow.abducted && abductionTimer>900){ // 60fps * 15s
+    ufo.active=true; ufo.step=0; abductionTimer=0;
+    ufo.y = cow.y - 200; cow.abducted=false; cow.y = grassY - cow.height/2;
   }
+
   if(ufo.active){
     ufo.step+=1;
-    ufo.y = cow.y-200 - Math.sin(ufo.step/20)*30;
+    ufo.y = cow.y - 200 - Math.sin(ufo.step/20)*30;
     cow.y -= 1.5;
-    if(cow.y<ufo.y+20){cow.abducted=true; ufo.active=false; cow.y=groundY+40;} // reset cow after UFO
+    if(cow.y<ufo.y+20){
+      cow.abducted=true;
+      ufo.active=false;
+    }
   }
 }
 
@@ -123,54 +154,48 @@ function draw(){
   // sky
   ctx.fillStyle="#020a2a"; ctx.fillRect(0,0,canvas.width,canvas.height);
 
-  // stars (slight parallax)
+  // stars
   ctx.font="16px sans-serif";
   stars.forEach(s=>ctx.fillText(s.emoji,s.x-scrollX*0.2,s.y));
 
-  // clouds (slower parallax)
+  // clouds
   ctx.font="48px sans-serif";
-  clouds.forEach(c=>ctx.fillText("☁️",c.x-scrollX*0.1,c.y));
+  clouds.forEach(c=>ctx.fillText("☁️",c.x-scrollX*0.15,c.y));
 
   // moon
   ctx.font="60px sans-serif";
-  ctx.fillText("🌖",100 - scrollX*0.05,100);
+  ctx.fillText("🌖",100,100);
 
   // grass
-  ctx.fillStyle="#2f7d32";
-  ctx.fillRect(0,groundY,canvas.width,GRASS_H);
+  ctx.fillStyle="#2f7d32"; ctx.fillRect(0,grassY,canvas.width,GRASS_H);
 
   // road
-  ctx.fillStyle="#555";
-  ctx.fillRect(0,groundY+GRASS_H,canvas.width,ROAD_H);
+  ctx.fillStyle="#555"; ctx.fillRect(0,canvas.height-ROAD_H,canvas.width,ROAD_H);
 
-  // trees (anchored)
+  // buildings – stationary
+  ctx.font="120px sans-serif";
+  buildings.forEach(b=>ctx.fillText(b.emoji,b.x,b.y));
+
+  // trees – stationary background
   trees.forEach(t=>{
     ctx.font=t.size+"px sans-serif";
     ctx.fillText(t.emoji,t.x,t.y);
   });
 
-  // city buildings (anchored)
-  ctx.font="120px sans-serif";
-  buildings.forEach(b=>ctx.fillText(b.emoji,b.x,b.y));
-
   // farm
-  farm.forEach(f=>{
-    ctx.font=f.height+"px sans-serif";
-    if(!f.abducted) ctx.fillText(f.emoji,f.x,f.y);
-  });
+  farm.forEach(f=>{ctx.font=f.height+"px sans-serif"; if(!f.abducted) ctx.fillText(f.emoji,f.x-scrollX,f.y);});
 
   // UFO
-  if(ufo.active){ctx.font=ufo.size+"px sans-serif"; ctx.fillText("🛸",ufo.x,ufo.y);}
+  if(ufo.active){ctx.font=ufo.size+"px sans-serif"; ctx.fillText("🛸",ufo.x-scrollX,ufo.y);}
 
   // player
-  const img=player.dir==="right"?imgRight:imgLeft;
+  const img = player.dir==="right"?imgRight:imgLeft;
   ctx.drawImage(img,player.x-28,player.y-56,56,56);
 }
 
 /* LOOP */
 function loop(){update(); draw(); requestAnimationFrame(loop);}
 loop();
-
 </script>
 
 </body>
