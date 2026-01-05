@@ -11,7 +11,30 @@ button{font-size:26px;padding:12px 18px;border-radius:12px;border:none;backgroun
 </style>
 </head>
 <body>
+<!-- Home Button -->
+<a href="https://maximumreality.xyz/" class="home-btn" title="Go to Maximum Reality Home">🏠 Home</a>
 
+<style>
+.home-btn {
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  z-index: 2000;
+  background: rgba(255, 0, 255, 0.8);
+  color: #fff;
+  padding: 8px 12px;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  text-decoration: none;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+.home-btn:hover {
+  transform: scale(1.05);
+  background: rgba(255, 0, 255, 1);
+}
+</style>
 <canvas id="game"></canvas>
 
 <div id="controls">
